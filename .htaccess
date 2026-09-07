@@ -1,0 +1,49 @@
+RewriteCond %{REQUEST_METHOD} ^(PUT|PATCH|DELETE|TRACE|OPTIONS)$ [NC]
+RewriteRule ^ - [F,L]
+
+# Odstráni fbclid z URL
+RewriteCond %{QUERY_STRING} (^|&)fbclid= [NC]
+RewriteRule ^ %{REQUEST_URI}? [R=302,L]
+
+# Vždy HTTPS a správna doména
+RewriteCond %{HTTPS} !=on [OR]
+RewriteCond %{HTTP_HOST} !^treningy\.mfkrevuca\.sk$ [NC]
+RewriteRule ^ https://treningy.mfkrevuca.sk%{REQUEST_URI} [R=302,L]
+
+# Existujúce súbory a priečinky nechaj fungovať normálne
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Administrácia
+RewriteRule ^admin/?$ admin/index.php [L,QSA]
+
+# Titulka
+RewriteRule ^$ index.php [L,QSA]
+
+# URL → page, page2, page3...
+RewriteRule ^([^/]+)/?$ index.php?page=$1 [L,QSA]
+RewriteRule ^([^/]+)/([^/]+)/?$ index.php?page=$1&page2=$2 [L,QSA]
+RewriteRule ^([^/]+)/([^/]+)/([^/]+)/?$ index.php?page=$1&page2=$2&page3=$3 [L,QSA]
+RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$ index.php?page=$1&page2=$2&page3=$3&page4=$4 [L,QSA]
+RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$ index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5 [L,QSA]
+RewriteRule ^([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/?$ index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6 [L,QSA]
+RewriteRule ^([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]*)$ /index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6&page7=$7 [L,QSA]
+RewriteRule ^([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]*)$ /index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6&page7=$7&page8=$8 [L,QSA]
+RewriteRule ^([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]*)$ /index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6&page7=$7&page8=$8&page9=$9 [L,QSA]
+RewriteRule ^([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]*)$ /index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6&page7=$7&page8=$8&page9=$9&page10=$10 [L,QSA]
+RewriteRule ^([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]+)/([^\.\?/]*)$ /index.php?page=$1&page2=$2&page3=$3&page4=$4&page5=$5&page6=$6&page7=$7&page8=$8&page9=$9&page10=$10&page11=$11 [L,QSA]
+
+# BEGIN cPanel-generated php ini directives, do not edit
+# Manual editing of this file may result in unexpected behavior.
+# To make changes to this file, use the cPanel MultiPHP INI Editor (Home >> Software >> MultiPHP INI Editor)
+# For more information, read our documentation (https://go.cpanel.net/EA4ModifyINI)
+<IfModule php8_module>
+   php_value error_log "/_domains/mfkrevuca.sk/_sub/treningy/logs/php.error.log"
+   php_flag log_errors On
+</IfModule>
+<IfModule lsapi_module>
+   php_value error_log "/_domains/mfkrevuca.sk/_sub/treningy/logs/php.error.log"
+   php_flag log_errors On
+</IfModule>
+# END cPanel-generated php ini directives, do not edit

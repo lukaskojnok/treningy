@@ -1,0 +1,14 @@
+# VS Code – môže obsahovať FTP/SFTP prístupy
+.vscode/
+*.code-workspace
+
+# Heslá a prístupové údaje
+/config/psw.php
+
+# Logy
+/logs/
+*.log
+
+# Lokálne systémové súbory
+.DS_Store
+Thumbs.db

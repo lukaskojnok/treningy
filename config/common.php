@@ -20,10 +20,6 @@ require_once("db.c.php");
 $Database = new Database();
 $db = $Database->getConnection();
 
-//pres starý admin
-$GLOBALS["connect"] = mysqli_connect($GLOBALS["db_host"], $GLOBALS["db_username"], $GLOBALS["db_password"], $GLOBALS["db_name"]) or die("Failed to connect to MySQL: " . mysqli_error($GLOBALS["connect"]));
-mysqli_set_charset($GLOBALS["connect"], "utf8mb4");
-
 if (isset($_COOKIE["loginADMIN"]) AND isset($_COOKIE["loginADMIN_unique_code"])) {
   define("ADMIN_ACTIVE", true);
 } else {

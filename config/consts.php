@@ -87,3 +87,37 @@ define('TRENERI', [
     ]
   ],
 ]);
+
+define('IHRISKA', [
+  "B" => [
+    "parts" => [
+      "B1" => "B1 tréningové",
+      "B2" => "B2 tréningové",
+      "B3" => "B3 tréningové",
+      "B4" => "B4 tréningové",
+    ],
+    "popis" => "Tréningové"
+  ],
+  "A" => [
+    "parts" => [
+      "A1" => "A1 hlavné",
+      "A2" => "A2 hlavné",
+      "A3" => "A3 hlavné",
+      "A4" => "A4 hlavné",
+    ],
+    "popis" => "Hlavné"
+  ],
+  "C" => [
+    "parts" => [
+      "C1" => "C1 pri Áčku",
+      "C2" => "C2 pri Áčku",
+    ],
+    "popis" => "Tréningové"
+  ],
+  "U" => [
+    "parts" => [
+      "U1" => "U1 umelé",
+    ],
+    "popis" => "Umelé"
+  ],
+]);

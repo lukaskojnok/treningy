@@ -337,6 +337,18 @@ select, input, textarea {
 .event small {
   font-size: 10px;
 }
+.event-compact {
+  display: flex; align-items: center; gap: 5px; padding: 1px 5px;
+}
+.event-compact .event-area {
+  flex: 0 0 auto; min-width: 31px; margin: 0; font-size: 10px;
+}
+.event-compact strong {
+  overflow: hidden; flex: 1; margin: 0; font-size: 11px; text-overflow: ellipsis; white-space: nowrap;
+}
+.event-compact .event-time, .event-compact small {
+  display: none;
+}
 .planner-footer {
   display: flex; justify-content: space-between; padding: 12px 0; font-size: 10px; color: var(--muted);
 }
@@ -501,4 +513,90 @@ dialog {
 }
 .area-tools strong {
   margin-left: auto; font-size: 11px;
+}
+#calendar-scroller {
+  position: relative; overflow: auto; height: min(634px, calc(100vh - 242px)); min-height: 300px; overscroll-behavior: contain; scroll-behavior: auto; overflow-anchor: none;
+}
+.calendar-inner {
+  width: 100%;
+}
+.calendar-head, .calendar-body {
+  grid-template-columns: var(--calendar-columns);
+}
+.calendar-head {
+  position: sticky; z-index: 4; top: 0; padding-right: 0; background: #fff;
+}
+.time-heading {
+  position: sticky; z-index: 5; left: 0; display: grid; align-self: stretch; place-items: center; background: #fff;
+}
+.time-axis {
+  position: sticky; z-index: 3; left: 0; background: #fff;
+}
+.time-axis, .day-column {
+  height: 1008px;
+}
+.slot {
+  height: 36px;
+}
+.event .event-area {
+  margin-bottom: 2px; font-size: 12px; font-weight: 800;
+}
+#field-legend {
+  display: flex; align-items: center; gap: 20px;
+}
+#booking-area-summary {
+  margin-left: 14px; font-size: 12px;
+}
+#filter-summary {
+  overflow: hidden; max-width: 250px; text-overflow: ellipsis; white-space: nowrap;
+}
+#pitch-picker {
+  width: 1000px;
+}
+#pitch-picker .area-map {
+  grid-template-columns: 1fr 1fr .8fr .8fr;
+}
+#pitch-picker .map-pitch {
+  height: 240px;
+}
+.map-part span {
+  font-size: 11px;
+}
+.map-whole {
+  width: 100%; margin-top: 10px;
+}
+#picker-summary {
+  padding: 12px 0; font-size: 13px; font-weight: 650;
+}
+
+.resource-head {
+  flex-direction: column; justify-content: center; gap: 2px; padding: 3px; line-height: 1.15; border-top: 3px solid currentColor;
+}
+.resource-head span, .resource-head small {
+  font-size: 10px;
+}
+.resource-head strong {
+  font-size: 18px;
+}
+
+.slot-add {
+  position: absolute; z-index: 2; right: 0; width: 27px; height: 36px; padding: 0; border: 0; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 17px; color: var(--primary); background: #edf6f0; cursor: pointer;
+}
+.slot-add:hover, .slot-add:focus-visible {
+  color: #fff; background: var(--primary);
+}
+.time-slots {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; padding: 14px; border: 1px solid var(--border); background: #fff;
+}
+.time-slots .selected {
+  color: #fff; background: var(--primary);
+}
+.field-controls .time-stepper {
+  display: flex; flex: 0 0 auto; align-items: center; gap: 12px;
+}
+.time-stepper strong {
+  min-width: 48px; text-align: center;
+}
+.time-stepper button:disabled {
+  opacity: .35; cursor: default;
 }

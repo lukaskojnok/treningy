@@ -14,12 +14,12 @@ $h = "";
 $e = "";
 $i = "";
 
-$query = $GLOBALS["db"]->prepare("SELECT id FROM admins WHERE password_forgotten_to < NOW() AND password_forgotten_to != '0000-00-00 00:00:00'");
+$query = $db->prepare("SELECT id FROM admins WHERE password_forgotten_to < NOW() AND password_forgotten_to != '0000-00-00 00:00:00'");
 $query->execute();
 $expired_password_requests = $query->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($expired_password_requests as $expired_password_request) {
-  $GLOBALS["db"]->prepare("UPDATE admins SET password_forgotten_hash='', password_forgotten_to='0000-00-00 00:00:00' WHERE id=:id")->execute([
+  $db->prepare("UPDATE admins SET password_forgotten_hash='', password_forgotten_to='0000-00-00 00:00:00' WHERE id=:id")->execute([
     "id" => $expired_password_request["id"]
   ]);
 }
@@ -28,7 +28,7 @@ if (($_POST["form"] ?? "") === "1") {
   $login = trim((string) ($_POST["login"] ?? ""));
   $password = (string) ($_POST["heslo"] ?? "");
 
-  $query = $GLOBALS["db"]->prepare("SELECT * FROM admins WHERE login=:login AND active='1'");
+  $query = $db->prepare("SELECT * FROM admins WHERE login=:login AND active='1'");
   $query->execute(["login" => $login]);
   $admin = $query->fetch(PDO::FETCH_ASSOC) ?: [];
 
@@ -47,10 +47,10 @@ if (($_POST["form"] ?? "") === "1") {
     $unique_code = unique_code_admin_login($admin["login"], $remote_address, $user_agent, session_id());
     setcookie("loginADMIN_unique_code", $unique_code, time() + 60 * 60 * 24, "/");
 
-    $GLOBALS["db"]->prepare("UPDATE admins SET date_login_last=NOW() WHERE login=:login")->execute(["login" => $login]);
-    $GLOBALS["db"]->prepare("DELETE FROM admins_logs WHERE unique_code=:unique_code")->execute(["unique_code" => $unique_code]);
+    $db->prepare("UPDATE admins SET date_login_last=NOW() WHERE login=:login")->execute(["login" => $login]);
+    $db->prepare("DELETE FROM admins_logs WHERE unique_code=:unique_code")->execute(["unique_code" => $unique_code]);
 
-    $query = $GLOBALS["db"]->prepare("INSERT INTO admins_logs SET login=:login, session_id=:session_id, user_agent=:user_agent, ip=:ip, unique_code=:unique_code, date_login=NOW(), date_last_do=NOW()");
+    $query = $db->prepare("INSERT INTO admins_logs SET login=:login, session_id=:session_id, user_agent=:user_agent, ip=:ip, unique_code=:unique_code, date_login=NOW(), date_last_do=NOW()");
     $query->execute([
       "login" => $login,
       "session_id" => session_id(),
@@ -74,7 +74,7 @@ if (($_POST["form"] ?? "") === "1") {
 if (($_POST["form_gen_1"] ?? "") === "1") {
   $email = trim((string) ($_POST["email"] ?? ""));
 
-  $query = $GLOBALS["db"]->prepare("SELECT * FROM admins WHERE email=:email");
+  $query = $db->prepare("SELECT * FROM admins WHERE email=:email");
   $query->execute(["email" => $email]);
   $admin = $query->fetch(PDO::FETCH_ASSOC) ?: [];
 
@@ -83,7 +83,7 @@ if (($_POST["form_gen_1"] ?? "") === "1") {
   } else {
     $password_forgotten_hash = getRandomString("20");
 
-    $query = $GLOBALS["db"]->prepare("UPDATE admins SET password_forgotten_hash=:password_forgotten_hash, password_forgotten_to=NOW() + INTERVAL 1 HOUR WHERE email=:email");
+    $query = $db->prepare("UPDATE admins SET password_forgotten_hash=:password_forgotten_hash, password_forgotten_to=NOW() + INTERVAL 1 HOUR WHERE email=:email");
     $query->execute([
       "password_forgotten_hash" => $password_forgotten_hash,
       "email" => $email
@@ -112,7 +112,7 @@ if ($page_mode === "forgot2") {
   $i = (string) ($_GET["i"] ?? "");
 
   if ($h !== "" && $e !== "" && $i !== "") {
-    $query = $GLOBALS["db"]->prepare("SELECT * FROM admins WHERE password_forgotten_hash=:password_forgotten_hash AND email=:email AND id=:id AND password_forgotten_to > NOW()");
+    $query = $db->prepare("SELECT * FROM admins WHERE password_forgotten_hash=:password_forgotten_hash AND email=:email AND id=:id AND password_forgotten_to > NOW()");
     $query->execute([
       "password_forgotten_hash" => $h,
       "email" => $e,
@@ -136,7 +136,7 @@ if ($page_mode === "forgot2") {
     } else {
       $password_save = hash("sha512", $admin_forgot2["login"] . $password_1 . HASH);
 
-      $query = $GLOBALS["db"]->prepare("UPDATE admins SET password_forgotten_hash='', password_forgotten_to='0000-00-00 00:00:00', password=:password WHERE id=:id");
+      $query = $db->prepare("UPDATE admins SET password_forgotten_hash='', password_forgotten_to='0000-00-00 00:00:00', password=:password WHERE id=:id");
       $query->execute([
         "password" => $password_save,
         "id" => $admin_forgot2["id"]

@@ -1,0 +1,28 @@
+TRÉNINGY MFK REVÚCA – vizuálny návrh
+
+Upravené súbory: index.php, login.php, css/css.css
+Nové súbory: js/calendar.js, nahlad.html, PRECITAJ-MA.txt
+
+Na existujúcom webe nahraj upravené súbory a priečinok js.
+Ostatné pôvodné súbory sú priložené pre úplnosť; konfiguráciu servera netreba prepisovať.
+Náhľad bez PHP: otvor nahlad.html. CSS a js musia zostať vedľa neho v pôvodných priečinkoch.
+
+Kalendár obsahuje vzorové ihriská, trénerov a rezervácie v aktuálnom týždni.
+Funguje prepínanie týždňov, filter ihriska, prepnutie na plochy, pridanie,
+úprava a vymazanie rezervácie. Kliknutím na rezerváciu otvoríš detail.
+Pri vytvorení alebo úprave kontroluje časový konflikt na rovnakej ploche.
+B a A: 4 štvrtiny (1, 2 hore; 3, 4 dole). Polovica sú dve susedné štvrtiny.
+C1: dve polovice nad sebou. U1: zatiaľ celá plocha, členenie sa doplní.
+Grafický výber vo formulári umožňuje označiť štvrtinu, polovicu alebo celé ihrisko.
+Diagonálne dvojice a tri štvrtiny nemožno uložiť. Jedna rezervácia patrí jednému ihrisku.
+Kontrola konfliktov porovnáva všetky vybrané časti, aj pri rezervácii celého ihriska.
+Kalendár sa otvorí od 14:00; ráno je dostupné scrollovaním nahor alebo tlačidlom Od 08:00.
+Údaje sú iba v pamäti otvorenej stránky, po obnovení sa obnovia ukážkové dáta.
+Spoločné ukladanie do databázy a oprávnenia jednotlivých trénerov zatiaľ nie sú zapojené.
+Responzívna verzia zatiaľ nie je spracovaná.
+
+Prihlasovanie a obnova hesla používajú pôvodnú logiku projektu.
+Repozitár neobsahuje config/db.c.php a classes/MailsMy/MailsMy.c.php,
+ktoré používa config/common.php. Na existujúcom serveri ich ponechaj.
+ZIP je úplná kópia dostupných súborov repozitára s uvedenými úpravami,
+nie samostatná inštalácia databázy alebo chýbajúcich serverových knižníc.

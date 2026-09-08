@@ -164,7 +164,7 @@ if (($_GET["pok"] ?? "") === "1") {
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0b5d3b">
   <title>Prihlásenie | Tréningy MFK Revúca</title>
-  <link rel="stylesheet" href="css/css.css?v=1">
+  <link rel="stylesheet" href="css/css.css?v=2">
 </head>
 <body class="auth-body">
   <div class="wrapper">

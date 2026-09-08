@@ -9,8 +9,9 @@ define('TEAMS', [
   'u15-m-a' => 'U15 - Starší žiaci',
   'u13-m-a' => 'U13 - Mladší žiaci',
   'u11-m-a' => 'U11 - Prípravka',
-  'u11-m-b' => 'U11 - Prípravka (B)',
-  'u09-m-a' => 'U9 - Prípravka',
+  'u10-m-a' => 'U10 - Prípravka',
+  'u09-m-a' => 'U9 - Prípravka (A)',
+  'u09-m-b' => 'U9 - Prípravka (B)',
 ]);
 
 define('POSTY', [
@@ -26,6 +27,23 @@ define('POSTY', [
 
 
 define('TRENERI', [
+  "admin" => [
+    "meno" => "Lukáš Kojnok",
+    "phone" => "",
+    "email" => "",
+    "photo" => "",
+    "timy" => [
+      "dospeli-m-a" => "admin",
+      "u19-m-a" => "admin",
+      "u15-m-a" => "admin",
+      "u13-m-a" => "admin",
+      "u11-m-a" => "admin",
+      "u10-m-a" => "admin",
+      "u09-m-a" => "admin",
+      "u09-m-b" => "admin",
+    ]
+  ],
+
   "cyrilsiman" => [
     "meno" => "Cyril Siman",
     "phone" => "",

@@ -4,7 +4,7 @@
   const config = JSON.parse($('pitch-config').textContent);
   const fields = Object.fromEntries(Object.entries(config).map(([id, field]) => [id, `${id} · ${field.popis}`]));
   const parts = Object.fromEntries(Object.entries(config).map(([id, field]) => [id, Object.keys(field.parts)]));
-  const displayParts = field => parts[field].length === 4 ? [parts[field][3], parts[field][1], parts[field][2], parts[field][0]] : parts[field];
+  const mapParts = field => parts[field].length === 4 ? [parts[field][3], parts[field][1], parts[field][2], parts[field][0]] : parts[field];
   const colors = {B: 'training', A: 'main', C: 'c1', U: 'artificial'};
   let typeFilter = 'all';
   let filterSelection = Object.fromEntries(Object.entries(parts).map(([id, list]) => [id, [...list]]));
@@ -33,6 +33,7 @@
   const events = [];
   const account = JSON.parse($('reservation-config').textContent);
   const allowedTeams = Object.keys(account.teams);
+  const isOwnTeam = event => Object.prototype.hasOwnProperty.call(account.teams, event.team);
   let editingVersion = null, saving = false, loaded = false, loadSequence = 0;
   $('field-date').value = localDate(new Date());
   const typeVisible = e => typeFilter === 'all' || e.type === typeFilter;
@@ -70,6 +71,7 @@
     const previousScroll = $('calendar-scroller');
     const horizontalScroll = previousScroll ? previousScroll.scrollLeft : 0;
     const isDay = mode === 'day', dailyNavigation = mode !== 'calendar';
+    $('today').textContent = dailyNavigation ? 'Dnes' : 'Tento týždeň';
     ['calendar-tip', 'morning', 'afternoon'].forEach(id => $(id).hidden = mode === 'fields');
     $('prev').setAttribute('aria-label', dailyNavigation ? 'Predchádzajúci deň' : 'Predchádzajúci týždeň');
     $('next').setAttribute('aria-label', dailyNavigation ? 'Nasledujúci deň' : 'Nasledujúci týždeň');
@@ -78,7 +80,7 @@
     let heads = '<div class="time-heading">ČAS</div>', columns = '<div class="time-axis">';
     for (let h = 8; h < 22; h++) columns += `<span style="top:${(h - 8) * 72 + 3}px">${clock(h * 60)}</span>`;
     columns += '</div>';
-    const resources = Object.keys(parts).flatMap(field => displayParts(field).filter(part => filterSelection[field]?.includes(part)).map(part => ({field, part})));
+    const resources = Object.keys(parts).flatMap(field => parts[field].filter(part => filterSelection[field]?.includes(part)).map(part => ({field, part})));
     const columnCount = isDay ? resources.length : 7;
     for (let i = 0; i < columnCount; i++) {
       const d = isDay ? selectedDay : dayAt(week, i), date = localDate(d);
@@ -102,7 +104,7 @@
           const left = sameTime ? '3px' : `calc((100% - ${isDay ? 0 : 27}px) * ${e.lane / ends.length} + 3px)`;
           const width = sameTime ? 'calc(100% - 33px)' : `calc((100% - ${isDay ? 0 : 27}px) / ${ends.length} - 6px)`;
           const kind = e.type === 'match' ? 'ZÁPAS' : 'TRÉNING';
-          columns += `<button class="event ${colors[e.field]}${e.type === 'match' ? ' event-match' : ''}${sameTime ? ' event-compact' : ''}" data-id="${e.id}" style="top:${top}px;height:${height}px;left:${left};width:${width}" title="${escape(kind + ' · ' + e.title + ' · ' + e.start + '–' + e.end + ' · ' + e.coach + ' · ' + fields[e.field] + ' · ' + areaLabel(e.field, e.area))}"><span class="event-area">${escape(selectedParts(e.field, e.area).join(" + "))}</span><span class="event-time">${e.start} – ${e.end}</span><strong>${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}</strong><small>${escape(fields[e.field])} · ${areaLabel(e.field, e.area)}</small><small>${escape(e.coach)}</small></button>`;
+          columns += `<button class="event ${colors[e.field]}${e.type === 'match' ? ' event-match' : ''}${sameTime ? ' event-compact' : ''}${isOwnTeam(e) ? '' : ' event-muted'}" data-id="${e.id}" style="top:${top}px;height:${height}px;left:${left};width:${width}" title="${escape(kind + ' · ' + e.title + ' · ' + e.start + '–' + e.end + ' · ' + e.coach + ' · ' + fields[e.field] + ' · ' + areaLabel(e.field, e.area))}"><span class="event-area">${escape(selectedParts(e.field, e.area).join(" + "))}</span><span class="event-time">${e.start} – ${e.end}</span><strong>${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}</strong><small>${escape(fields[e.field])} · ${areaLabel(e.field, e.area)}</small><small>${escape(e.coach)}</small></button>`;
         });
       });
       if (!isDay) for (let slot = 0; slot < 28; slot++) columns += `<button class="slot-add" style="top:${slot * 36}px" data-date="${date}" data-time="${clock(480 + slot * 30)}" title="Pridať rezerváciu o ${clock(480 + slot * 30)}" aria-label="Pridať rezerváciu ${date} o ${clock(480 + slot * 30)}">+</button>`;
@@ -126,25 +128,25 @@
     $('pitches').innerHTML = Object.entries(fields).filter(([id]) => shownFields().includes(id)).map(([id, title]) => {
       const allDaily = events.filter(e => e.field === id && e.date === date).sort((a, b) => a.start.localeCompare(b.start));
       const daily = allDaily.filter(typeVisible);
-      return `<article class="pitch-card"><h2>${title}</h2><p>${parts[id].length === 4 ? 'Štvrtina, polovica alebo celé ihrisko' : parts[id].length === 2 ? 'Polovica alebo celé ihrisko' : 'Celá plocha'}</p><div class="pitch parts-${parts[id].length}">${displayParts(id).map(area => {
+      return `<article class="pitch-card"><h2>${title}</h2><p>${parts[id].length === 4 ? 'Štvrtina, polovica alebo celé ihrisko' : parts[id].length === 2 ? 'Polovica alebo celé ihrisko' : 'Celá plocha'}</p><div class="pitch parts-${parts[id].length}">${mapParts(id).map(area => {
         const e = allDaily.find(e => selectedParts(e.field, e.area).includes(area) && e.start <= time && e.end > time);
-        return `<button class="pitch-half ${e ? `busy${e.type === 'match' ? ' event-match' : ''}` : ''}" ${e ? `data-id="${e.id}"` : `data-field="${id}" data-area="${area}"`}><small>${parts[id].length === 4 ? 'ŠTVRTINA' : parts[id].length === 2 ? 'POLOVICA' : 'PLOCHA'} ${area}</small><strong>${e ? `${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}` : 'Voľná plocha'}</strong><span>${e ? `${e.start} – ${e.end} · ${areaLabel(e.field, e.area)}` : '＋ Rezervovať tento čas'}</span></button>`;
-      }).join('')}</div><div class="pitch-list"><h4>REZERVÁCIE V TENTO DEŇ · ${daily.length}</h4>${daily.map(e => `<button class="pitch-booking${e.type === 'match' ? ' event-match' : ''}" data-id="${e.id}"><strong>${e.start} – ${e.end}</strong> · ${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}<br>${areaLabel(e.field, e.area)} · ${escape(e.coach)}</button>`).join('') || '<p>Pre zvolený filter tu nie sú rezervácie.</p>'}</div></article>`;
+        return `<button class="pitch-half ${e ? `busy${e.type === 'match' ? ' event-match' : ''}${isOwnTeam(e) ? '' : ' event-muted'}` : ''}" ${e ? `data-id="${e.id}"` : `data-field="${id}" data-area="${area}"`}><small>${parts[id].length === 4 ? 'ŠTVRTINA' : parts[id].length === 2 ? 'POLOVICA' : 'PLOCHA'} ${area}</small><strong>${e ? `${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}` : 'Voľná plocha'}</strong><span>${e ? `${e.start} – ${e.end} · ${areaLabel(e.field, e.area)}` : '＋ Rezervovať tento čas'}</span></button>`;
+      }).join('')}</div><div class="pitch-list"><h4>REZERVÁCIE V TENTO DEŇ · ${daily.length}</h4>${daily.map(e => `<button class="pitch-booking${e.type === 'match' ? ' event-match' : ''}${isOwnTeam(e) ? '' : ' event-muted'}" data-id="${e.id}"><strong>${e.start} – ${e.end}</strong> · ${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}<br>${areaLabel(e.field, e.area)} · ${escape(e.coach)}</button>`).join('') || '<p>Pre zvolený filter tu nie sú rezervácie.</p>'}</div></article>`;
     }).join('');
   }
   function showForm(data = {}) {
     if (!loaded || saving) return;
     const form = $('event-form'); form.reset(); editing = data.id || null; editingVersion = data.version || null;
     const canEdit = editing ? data.canEdit : allowedTeams.length > 0;
+    form.dataset.canEdit = String(canEdit);
     form.elements.team.innerHTML = '<option value="">Vyber tím</option>' + Object.entries(account.teams).map(([key, label]) => `<option value="${escape(key)}">${escape(label)}</option>`).join('');
     if (editing && !account.teams[data.team]) form.elements.team.add(new Option(data.title, data.team));
     Array.from(form.elements).forEach(el => { if (el.name && el.name !== 'coach') el.disabled = !canEdit; });
-    $('open-booking-map').disabled = !canEdit;
     $('save-event').hidden = !canEdit;
     const defaults = {date: '', start: '', end: '', field: '', area: '', team: allowedTeams.length === 1 ? allowedTeams[0] : '', coach: account.coach, ...data};
     Object.entries(defaults).forEach(([k, v]) => { if (form.elements.namedItem(k)) form.elements.namedItem(k).value = v; });
     $('dialog-title').textContent = editing ? 'Upraviť rezerváciu' : 'Nová rezervácia';
-    $('delete-event').hidden = !editing || !canEdit; $('form-error').textContent = canEdit ? '' : 'Udalosť už začala alebo ju pre tento tím nemôžeš upraviť.'; updateBookingSummary(); updateTypeHelp(); $('event-dialog').showModal();
+    $('delete-event').hidden = !editing || !canEdit; $('form-error').textContent = canEdit ? '' : (data.editReason || 'Túto rezerváciu nemôžeš upraviť.'); updateBookingSummary(); updateFormStep(); updateBookingMapAvailability(); $('event-dialog').showModal();
   }
   function formatReservationDate(value) {
     if (!value) return '';
@@ -152,14 +154,37 @@
   }
   function updateTypeHelp() {
     const form = $('event-form'), type = form.elements.type.value, date = form.elements.date;
+    const trainingNotice = account.trainingWindow.isOpen ? `Tréning možno pridať od dneška do konca nasledujúceho týždňa: ${formatReservationDate(account.trainingWindow.from)} – ${formatReservationDate(account.trainingWindow.nextTo)}.` : `Tréning možno pridať od dneška do nedele ${formatReservationDate(account.trainingWindow.currentTo)}. Nasledujúci týždeň sa otvorí od ${account.trainingWindow.openDayLabel}.`;
     date.removeAttribute('min'); date.removeAttribute('max');
     if (type === 'training') {
       if (!editing) { date.min = account.trainingWindow.from; date.max = account.trainingWindow.to; }
       const team = form.elements.team.value, limit = team ? account.teamLimits[team] : undefined;
       const limitText = limit === null ? ' Na Áčku nemá tento tím týždenný limit.' : limit > 0 ? ` Na Áčku môže mať najviac ${limit}× za týždeň.` : team ? ' Pre tento tím nie je nastavené pravidlo Áčka.' : '';
-      $('type-help').textContent = (account.trainingWindow.isOpen ? `Tréning možno pridať na budúci týždeň: ${formatReservationDate(account.trainingWindow.from)} – ${formatReservationDate(account.trainingWindow.to)}.` : `Pridávanie tréningov na budúci týždeň sa otvorí od ${account.trainingWindow.openDayLabel}.`) + limitText;
+      $('type-help').textContent = trainingNotice + limitText;
     } else if (type === 'match') $('type-help').textContent = 'Zápas môžeš zapísať ľubovoľne dopredu a nevzťahuje sa naň týždenný limit Áčka.';
-    else $('type-help').textContent = 'Najprv vyber tréning alebo zápas.';
+    else $('type-help').textContent = trainingNotice + ' Najprv vyber tréning alebo zápas.';
+    $('type-help').classList.toggle('training-notice', type !== 'match');
+  }
+  function updateFormStep() {
+    const type = $('event-form').elements.type.value;
+    $('event-details').hidden = !['training', 'match'].includes(type);
+    updateTypeHelp();
+  }
+  function setDefaultEnd() {
+    const form = $('event-form'), type = form.elements.type.value, start = form.elements.start.value;
+    if (!type) return;
+    form.elements.start.max = type === 'match' ? '19:00' : '20:30';
+    if (!start) { updateBookingMapAvailability(); return; }
+    const endMinutes = minutes(start) + (type === 'match' ? 180 : 90);
+    if (endMinutes > 1320) {
+      form.elements.end.value = '';
+      $('form-error').textContent = type === 'match' ? 'Zápas musí pri predvolenom trvaní 3 hodiny začať najneskôr o 19:00.' : 'Tréning musí pri predvolenom trvaní 90 minút začať najneskôr o 20:30.';
+      updateBookingMapAvailability();
+      return;
+    }
+    form.elements.end.value = clock(endMinutes);
+    $('form-error').textContent = '';
+    updateBookingMapAvailability();
   }
   function handleTypeChange(event) {
     if (event.target.value === 'match' && event.target.checked && parts.A) {
@@ -168,7 +193,8 @@
       form.elements.area.value = parts.A.join(',');
       updateBookingSummary();
     }
-    updateTypeHelp();
+    updateFormStep();
+    if (!$('event-details').hidden) setDefaultEnd();
   }
   function restoreCalendarScroll() {
     if (mode === 'fields') return;
@@ -180,6 +206,12 @@
     const form = $('event-form');
     $('booking-area-summary').textContent = form.elements.field.value ? `${fields[form.elements.field.value]} · ${areaLabel(form.elements.field.value, form.elements.area.value)}` : 'Vyber ihrisko a plochu';
   }
+  function updateBookingMapAvailability() {
+    const form = $('event-form');
+    const hasTerm = Boolean(form.elements.date.value && form.elements.start.value && form.elements.end.value && form.elements.start.value < form.elements.end.value);
+    $('open-booking-map').disabled = form.dataset.canEdit !== 'true' || !hasTerm;
+    if (!form.elements.field.value) $('booking-area-summary').textContent = hasTerm ? 'Vyber ihrisko a plochu' : 'Najprv vyber dátum a čas';
+  }
   let pickerMode = 'filter', draft = {};
   function openPicker(context) {
     pickerMode = context;
@@ -188,7 +220,9 @@
       const form = $('event-form');
       draft = Object.fromEntries(Object.keys(fields).map(id => [id, id === form.elements.field.value ? [...selectedParts(id, form.elements.area.value)] : []]));
     }
-    $('picker-title').textContent = context === 'filter' ? 'Zobraziť ihriská a časti' : 'Vybrať plochu na rezerváciu';
+    const form = $('event-form');
+    const term = form.elements.date.value && form.elements.start.value ? `${formatReservationDate(form.elements.date.value)} · ${form.elements.start.value}${form.elements.end.value ? ' – ' + form.elements.end.value : ''}` : '';
+    $('picker-title').textContent = context === 'filter' ? 'Zobraziť ihriská a časti' : `Vybrať plochu na rezerváciu${term ? ' · ' + term : ''}`;
     $('picker-help').textContent = context === 'filter' ? 'Označ ľubovoľné časti aj z viacerých ihrísk. Kalendár zobrazí všetky rezervácie, ktoré do výberu zasahujú.' : 'Označ štvrtinu, dve susedné štvrtiny alebo celé ihrisko. Obsadenosť platí pre termín vo formulári.';
     $('picker-all').hidden = context !== 'filter';
     $('picker-error').textContent = '';
@@ -197,7 +231,7 @@
   function renderPicker() {
     const form = $('event-form');
     const hasTerm = Boolean(form.elements.date.value && form.elements.start.value && form.elements.end.value && form.elements.start.value < form.elements.end.value);
-    $('picker-map').innerHTML = Object.entries(fields).map(([id, name]) => `<div class="map-field ${draft[id].length ? 'active-field' : ''}"><strong>${escape(name)}</strong><div class="map-pitch parts-${parts[id].length}">${displayParts(id).map(part => {
+    $('picker-map').innerHTML = Object.entries(fields).map(([id, name]) => `<div class="map-field ${draft[id].length ? 'active-field' : ''}"><strong>${escape(name)}</strong><div class="map-pitch parts-${parts[id].length}">${mapParts(id).map(part => {
       const active = draft[id].includes(part);
       const busy = pickerMode === 'booking' && hasTerm && events.some(e => e.id !== editing && e.field === id && e.date === form.elements.date.value && e.start < form.elements.end.value && e.end > form.elements.start.value && selectedParts(e.field, e.area).includes(part));
       return `<button type="button" class="map-part ${active ? 'is-chosen' : ''} ${busy ? 'is-busy' : ''}" data-picker-field="${id}" data-picker-part="${part}" aria-pressed="${active}" aria-label="${escape(config[id].parts[part])}${busy ? ', obsadené' : ''}"><b>${escape(part)}</b><span>${escape(config[id].parts[part])}</span><small>${busy ? 'Obsadené' : active ? 'Vybrané ✓' : pickerMode === 'filter' ? 'Nezobrazené' : hasTerm ? 'Voľné' : 'Najprv zadaj termín'}</small></button>`;
@@ -274,6 +308,9 @@
   });
   document.querySelectorAll('input[name="type"]').forEach(input => input.onchange = handleTypeChange);
   $('event-form').elements.team.onchange = updateTypeHelp;
+  $('event-form').elements.start.onchange = setDefaultEnd;
+  $('event-form').elements.date.onchange = updateBookingMapAvailability;
+  $('event-form').elements.end.onchange = updateBookingMapAvailability;
   ['close-dialog', 'cancel-dialog'].forEach(id => $(id).onclick = () => $('event-dialog').close());
   function setSaving(value) {
     saving = value;
@@ -282,9 +319,27 @@
     $('cancel-dialog').disabled = value;
     $('close-dialog').disabled = value;
   }
+  let confirmationResolve = null;
+  function finishConfirmation(result) {
+    if (!confirmationResolve) return;
+    const resolve = confirmationResolve;
+    confirmationResolve = null;
+    $('confirm-dialog').close();
+    resolve(result);
+  }
+  function askConfirmation(message) {
+    $('confirm-message').textContent = message;
+    $('confirm-dialog').showModal();
+    return new Promise(resolve => { confirmationResolve = resolve; });
+  }
+  $('confirm-no').onclick = () => finishConfirmation(false);
+  $('confirm-close').onclick = () => finishConfirmation(false);
+  $('confirm-yes').onclick = () => finishConfirmation(true);
+  $('confirm-dialog').addEventListener('cancel', event => { event.preventDefault(); finishConfirmation(false); });
   $('event-dialog').addEventListener('cancel', event => { if (saving) event.preventDefault(); });
   $('delete-event').onclick = async () => {
-    if (saving || !editing || !confirm('Naozaj vymazať túto rezerváciu?')) return;
+    if (saving || !editing) return;
+    if (!await askConfirmation('Naozaj chceš vymazať túto rezerváciu? Táto zmena sa nedá vrátiť späť.')) return;
     setSaving(true);
     try {
       await api({action: 'delete', id: editing, version: editingVersion});

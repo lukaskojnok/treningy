@@ -1,6 +1,6 @@
 <?php
 // 1 = pondelok, 2 = utorok, 3 = streda, 4 = stvrtok, 5 = piatok, 6 = sobota, 7 = nedela.
-define('TRENINGY_DEN_OTVORENIA_DALSIEHO_TYZDNA', 4);
+define('TRENINGY_DEN_OTVORENIA_DALSIEHO_TYZDNA', 3);
 define('REZERVACIE_CASOVE_PASMO', 'Europe/Bratislava');
 
 $ADMIN_TOP["link"] = "";
@@ -59,6 +59,8 @@ define('POSTY', [
   'hrac' => 'Hráč v poli',
 ]);
 
+
+
 define('TRENERI', [
   "admin" => [
     "meno" => "Lukáš Kojnok",
@@ -68,12 +70,12 @@ define('TRENERI', [
     "timy" => [
       "dospeli-m-a" => "admin",
       "u19-m-a" => "admin",
-      "u15-m-a" => "admin",
-      "u13-m-a" => "admin",
-      "u11-m-a" => "admin",
-      "u10-m-a" => "admin",
-      "u09-m-a" => "admin",
-      "u09-m-b" => "admin",
+      // "u15-m-a" => "admin",
+      // "u13-m-a" => "admin",
+      // "u11-m-a" => "admin",
+      // "u10-m-a" => "admin",
+      // "u09-m-a" => "admin",
+      // "u09-m-b" => "admin",
     ]
   ],
 
@@ -84,7 +86,7 @@ define('TRENERI', [
     "photo" => "",
     "timy" => [
       "dospeli-m-a" => "Hlavný tréner",
-      "u19-m-a" => "Hlavný tréner",
+      // "u19-m-a" => "Hlavný tréner",
     ]
   ],
 

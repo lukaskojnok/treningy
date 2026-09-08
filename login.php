@@ -4,7 +4,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 
 require_once("config/common.php");
 
-// echo hash('sha512', "admin"."".HASH);
+// echo hash('sha512', "cyrilsiman"."".HASH);
 
 $result_log = "";
 $page_mode = (string) ($_GET["p"] ?? "login");

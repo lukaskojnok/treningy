@@ -4,7 +4,7 @@
   const config = JSON.parse($('pitch-config').textContent);
   const fields = Object.fromEntries(Object.entries(config).map(([id, field]) => [id, `${id} · ${field.popis}`]));
   const parts = Object.fromEntries(Object.entries(config).map(([id, field]) => [id, Object.keys(field.parts)]));
-  const displayParts = field => parts[field].length === 4 ? [parts[field][3], parts[field][1], parts[field][2], parts[field][0]] : parts[field];
+  const mapParts = field => parts[field].length === 4 ? [parts[field][3], parts[field][1], parts[field][2], parts[field][0]] : parts[field];
   const colors = {B: 'training', A: 'main', C: 'c1', U: 'artificial'};
   let typeFilter = 'all';
   let filterSelection = Object.fromEntries(Object.entries(parts).map(([id, list]) => [id, [...list]]));
@@ -30,6 +30,13 @@
   const clock = n => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
   const escape = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   let selectedDay = new Date(), week = monday(new Date()), editing = null, mode = 'calendar';
+  const trainingOpenDay = 4;
+  const trainingFrom = new Date();
+  const trainingCurrentTo = dayAt(monday(new Date()), 6);
+  const trainingNextFrom = dayAt(monday(new Date()), 7);
+  const trainingNextTo = dayAt(trainingNextFrom, 6);
+  const trainingWindowOpen = ((new Date().getDay() + 6) % 7) + 1 >= trainingOpenDay;
+  const trainingTo = trainingWindowOpen ? trainingNextTo : trainingCurrentTo;
   const events = [];
   const dailyTrainings = [
     ['A', 'A1,A2', 'A-mužstvo', 'Ján Horváth'],
@@ -76,6 +83,7 @@
     const previousScroll = $('calendar-scroller');
     const horizontalScroll = previousScroll ? previousScroll.scrollLeft : 0;
     const isDay = mode === 'day', dailyNavigation = mode !== 'calendar';
+    $('today').textContent = dailyNavigation ? 'Dnes' : 'Tento týždeň';
     ['calendar-tip', 'morning', 'afternoon'].forEach(id => $(id).hidden = mode === 'fields');
     $('prev').setAttribute('aria-label', dailyNavigation ? 'Predchádzajúci deň' : 'Predchádzajúci týždeň');
     $('next').setAttribute('aria-label', dailyNavigation ? 'Nasledujúci deň' : 'Nasledujúci týždeň');
@@ -84,7 +92,7 @@
     let heads = '<div class="time-heading">ČAS</div>', columns = '<div class="time-axis">';
     for (let h = 8; h < 22; h++) columns += `<span style="top:${(h - 8) * 72 + 3}px">${clock(h * 60)}</span>`;
     columns += '</div>';
-    const resources = Object.keys(parts).flatMap(field => displayParts(field).filter(part => filterSelection[field]?.includes(part)).map(part => ({field, part})));
+    const resources = Object.keys(parts).flatMap(field => parts[field].filter(part => filterSelection[field]?.includes(part)).map(part => ({field, part})));
     const columnCount = isDay ? resources.length : 7;
     for (let i = 0; i < columnCount; i++) {
       const d = isDay ? selectedDay : dayAt(week, i), date = localDate(d);
@@ -132,7 +140,7 @@
     $('pitches').innerHTML = Object.entries(fields).filter(([id]) => shownFields().includes(id)).map(([id, title]) => {
       const allDaily = events.filter(e => e.field === id && e.date === date).sort((a, b) => a.start.localeCompare(b.start));
       const daily = allDaily.filter(typeVisible);
-      return `<article class="pitch-card"><h2>${title}</h2><p>${parts[id].length === 4 ? 'Štvrtina, polovica alebo celé ihrisko' : parts[id].length === 2 ? 'Polovica alebo celé ihrisko' : 'Celá plocha'}</p><div class="pitch parts-${parts[id].length}">${displayParts(id).map(area => {
+      return `<article class="pitch-card"><h2>${title}</h2><p>${parts[id].length === 4 ? 'Štvrtina, polovica alebo celé ihrisko' : parts[id].length === 2 ? 'Polovica alebo celé ihrisko' : 'Celá plocha'}</p><div class="pitch parts-${parts[id].length}">${mapParts(id).map(area => {
         const e = allDaily.find(e => selectedParts(e.field, e.area).includes(area) && e.start <= time && e.end > time);
         return `<button class="pitch-half ${e ? `busy${e.type === 'match' ? ' event-match' : ''}` : ''}" ${e ? `data-id="${e.id}"` : `data-field="${id}" data-area="${area}"`}><small>${parts[id].length === 4 ? 'ŠTVRTINA' : parts[id].length === 2 ? 'POLOVICA' : 'PLOCHA'} ${area}</small><strong>${e ? `${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}` : 'Voľná plocha'}</strong><span>${e ? `${e.start} – ${e.end} · ${areaLabel(e.field, e.area)}` : '＋ Rezervovať tento čas'}</span></button>`;
       }).join('')}</div><div class="pitch-list"><h4>REZERVÁCIE V TENTO DEŇ · ${daily.length}</h4>${daily.map(e => `<button class="pitch-booking${e.type === 'match' ? ' event-match' : ''}" data-id="${e.id}"><strong>${e.start} – ${e.end}</strong> · ${e.type === 'match' ? 'ZÁPAS · ' : ''}${escape(e.title)}<br>${areaLabel(e.field, e.area)} · ${escape(e.coach)}</button>`).join('') || '<p>Pre zvolený filter tu nie sú rezervácie.</p>'}</div></article>`;
@@ -143,11 +151,42 @@
     const defaults = {date: '', start: '', end: '', field: '', area: '', ...data};
     Object.entries(defaults).forEach(([k, v]) => { if (form.elements.namedItem(k)) form.elements.namedItem(k).value = v; });
     $('dialog-title').textContent = editing ? 'Upraviť rezerváciu' : 'Nová rezervácia';
-    $('delete-event').hidden = !editing; $('form-error').textContent = ''; updateBookingSummary(); updateTypeHelp(); $('event-dialog').showModal();
+    $('delete-event').hidden = !editing; $('form-error').textContent = ''; updateBookingSummary(); updateFormStep(); updateBookingMapAvailability(); $('event-dialog').showModal();
+  }
+  function formatReservationDate(value) {
+    const date = value instanceof Date ? value : new Date(value + 'T12:00:00');
+    return date.toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric', year: 'numeric'});
   }
   function updateTypeHelp() {
+    const form = $('event-form'), type = form.elements.type.value, date = form.elements.date;
+    date.removeAttribute('min'); date.removeAttribute('max');
+    if (type === 'training') {
+      if (!editing) { date.min = localDate(trainingFrom); date.max = localDate(trainingTo); }
+      $('type-help').textContent = trainingWindowOpen ? `Tréning možno pridať od dneška do konca nasledujúceho týždňa: ${formatReservationDate(trainingFrom)} – ${formatReservationDate(trainingNextTo)}.` : `Tréning možno pridať od dneška do nedele ${formatReservationDate(trainingCurrentTo)}. Nasledujúci týždeň sa otvorí od štvrtka.`;
+    } else if (type === 'match') $('type-help').textContent = 'Zápas možno zapísať ľubovoľne dopredu a nemá limit Áčka.';
+    else $('type-help').textContent = 'Najprv vyber tréning alebo zápas.';
+  }
+  function updateFormStep() {
     const type = $('event-form').elements.type.value;
-    $('type-help').textContent = type === 'training' ? 'Tréningy sa zapisujú iba na budúci týždeň po otvorení termínov.' : type === 'match' ? 'Zápas možno zapísať ľubovoľne dopredu a nemá limit Áčka.' : 'Najprv vyber tréning alebo zápas.';
+    $('event-details').hidden = !['training', 'match'].includes(type);
+    $('type-help').classList.remove('blocked');
+    updateTypeHelp();
+  }
+  function setDefaultEnd() {
+    const form = $('event-form'), type = form.elements.type.value, start = form.elements.start.value;
+    if (!type) return;
+    form.elements.start.max = type === 'match' ? '19:00' : '20:30';
+    if (!start) { updateBookingMapAvailability(); return; }
+    const endMinutes = minutes(start) + (type === 'match' ? 180 : 90);
+    if (endMinutes > 1320) {
+      form.elements.end.value = '';
+      $('form-error').textContent = type === 'match' ? 'Zápas musí pri predvolenom trvaní 3 hodiny začať najneskôr o 19:00.' : 'Tréning musí pri predvolenom trvaní 90 minút začať najneskôr o 20:30.';
+      updateBookingMapAvailability();
+      return;
+    }
+    form.elements.end.value = clock(endMinutes);
+    $('form-error').textContent = '';
+    updateBookingMapAvailability();
   }
   function handleTypeChange(event) {
     if (event.target.value === 'match' && event.target.checked && parts.A) {
@@ -156,7 +195,8 @@
       form.elements.area.value = parts.A.join(',');
       updateBookingSummary();
     }
-    updateTypeHelp();
+    updateFormStep();
+    if (!$('event-details').hidden) setDefaultEnd();
   }
   function restoreCalendarScroll() {
     if (mode === 'fields') return;
@@ -168,6 +208,12 @@
     const form = $('event-form');
     $('booking-area-summary').textContent = form.elements.field.value ? `${fields[form.elements.field.value]} · ${areaLabel(form.elements.field.value, form.elements.area.value)}` : 'Vyber ihrisko a plochu';
   }
+  function updateBookingMapAvailability() {
+    const form = $('event-form');
+    const hasTerm = Boolean(form.elements.date.value && form.elements.start.value && form.elements.end.value && form.elements.start.value < form.elements.end.value);
+    $('open-booking-map').disabled = !hasTerm;
+    if (!form.elements.field.value) $('booking-area-summary').textContent = hasTerm ? 'Vyber ihrisko a plochu' : 'Najprv vyber dátum a čas';
+  }
   let pickerMode = 'filter', draft = {};
   function openPicker(context) {
     pickerMode = context;
@@ -176,7 +222,9 @@
       const form = $('event-form');
       draft = Object.fromEntries(Object.keys(fields).map(id => [id, id === form.elements.field.value ? [...selectedParts(id, form.elements.area.value)] : []]));
     }
-    $('picker-title').textContent = context === 'filter' ? 'Zobraziť ihriská a časti' : 'Vybrať plochu na rezerváciu';
+    const form = $('event-form');
+    const term = form.elements.date.value && form.elements.start.value ? `${formatReservationDate(form.elements.date.value)} · ${form.elements.start.value}${form.elements.end.value ? ' – ' + form.elements.end.value : ''}` : '';
+    $('picker-title').textContent = context === 'filter' ? 'Zobraziť ihriská a časti' : `Vybrať plochu na rezerváciu${term ? ' · ' + term : ''}`;
     $('picker-help').textContent = context === 'filter' ? 'Označ ľubovoľné časti aj z viacerých ihrísk. Kalendár zobrazí všetky rezervácie, ktoré do výberu zasahujú.' : 'Označ štvrtinu, dve susedné štvrtiny alebo celé ihrisko. Obsadenosť platí pre termín vo formulári.';
     $('picker-all').hidden = context !== 'filter';
     $('picker-error').textContent = '';
@@ -185,7 +233,7 @@
   function renderPicker() {
     const form = $('event-form');
     const hasTerm = Boolean(form.elements.date.value && form.elements.start.value && form.elements.end.value && form.elements.start.value < form.elements.end.value);
-    $('picker-map').innerHTML = Object.entries(fields).map(([id, name]) => `<div class="map-field ${draft[id].length ? 'active-field' : ''}"><strong>${escape(name)}</strong><div class="map-pitch parts-${parts[id].length}">${displayParts(id).map(part => {
+    $('picker-map').innerHTML = Object.entries(fields).map(([id, name]) => `<div class="map-field ${draft[id].length ? 'active-field' : ''}"><strong>${escape(name)}</strong><div class="map-pitch parts-${parts[id].length}">${mapParts(id).map(part => {
       const active = draft[id].includes(part);
       const busy = pickerMode === 'booking' && hasTerm && events.some(e => e.id !== editing && e.field === id && e.date === form.elements.date.value && e.start < form.elements.end.value && e.end > form.elements.start.value && selectedParts(e.field, e.area).includes(part));
       return `<button type="button" class="map-part ${active ? 'is-chosen' : ''} ${busy ? 'is-busy' : ''}" data-picker-field="${id}" data-picker-part="${part}" aria-pressed="${active}" aria-label="${escape(config[id].parts[part])}${busy ? ', obsadené' : ''}"><b>${escape(part)}</b><span>${escape(config[id].parts[part])}</span><small>${busy ? 'Obsadené' : active ? 'Vybrané ✓' : pickerMode === 'filter' ? 'Nezobrazené' : hasTerm ? 'Voľné' : 'Najprv zadaj termín'}</small></button>`;
@@ -261,8 +309,34 @@
     render();
   });
   document.querySelectorAll('input[name="type"]').forEach(input => input.onchange = handleTypeChange);
+  $('event-form').elements.start.onchange = setDefaultEnd;
+  $('event-form').elements.date.onchange = updateBookingMapAvailability;
+  $('event-form').elements.end.onchange = updateBookingMapAvailability;
   ['close-dialog', 'cancel-dialog'].forEach(id => $(id).onclick = () => $('event-dialog').close());
-  $('delete-event').onclick = () => { const index = events.findIndex(e => e.id === editing); if (index >= 0) events.splice(index, 1); $('event-dialog').close(); render(); };
+  let confirmationResolve = null;
+  function finishConfirmation(result) {
+    if (!confirmationResolve) return;
+    const resolve = confirmationResolve;
+    confirmationResolve = null;
+    $('confirm-dialog').close();
+    resolve(result);
+  }
+  function askConfirmation(message) {
+    $('confirm-message').textContent = message;
+    $('confirm-dialog').showModal();
+    return new Promise(resolve => { confirmationResolve = resolve; });
+  }
+  $('confirm-no').onclick = () => finishConfirmation(false);
+  $('confirm-close').onclick = () => finishConfirmation(false);
+  $('confirm-yes').onclick = () => finishConfirmation(true);
+  $('confirm-dialog').addEventListener('cancel', event => { event.preventDefault(); finishConfirmation(false); });
+  $('delete-event').onclick = async () => {
+    if (!editing || !await askConfirmation('Naozaj chceš vymazať túto rezerváciu? Táto zmena sa nedá vrátiť späť.')) return;
+    const index = events.findIndex(e => e.id === editing);
+    if (index >= 0) events.splice(index, 1);
+    $('event-dialog').close();
+    render();
+  };
   $('event-form').onsubmit = event => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.target)); data.title = data.title.trim(); data.coach = data.coach.trim();

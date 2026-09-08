@@ -202,6 +202,12 @@ h1 {
 .button.primary:hover {
   background: var(--primary-dark);
 }
+.button.danger-button {
+  border-color: #a12626; color: #fff; background: #a12626;
+}
+.button.danger-button:hover {
+  background: #7f1d1d;
+}
 .menu-wrap {
   position: relative;
 }
@@ -337,6 +343,12 @@ select, input, textarea {
 .event:hover {
   filter: brightness(.96);
 }
+.event-muted {
+  opacity: .3; filter: grayscale(1);
+}
+.event-muted:hover {
+  opacity: .45; filter: grayscale(1);
+}
 .event strong, .event small, .event span {
   display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -459,6 +471,15 @@ dialog::backdrop {
 }
 .type-help {
   min-height: 18px; margin: 0 0 10px; font-size: 11px; color: var(--muted);
+}
+.type-help.training-notice {
+  font-weight: 700; color: var(--error);
+}
+.type-help.blocked {
+  padding: 9px 11px; border-left: 3px solid var(--error); color: var(--error); background: var(--error-bg);
+}
+#event-details {
+  padding-top: 4px;
 }
 #event-form label {
   display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 12px; font-weight: 600;
@@ -601,6 +622,9 @@ dialog {
 #pitch-picker {
   width: 1000px;
 }
+#confirm-dialog {
+  width: 430px;
+}
 #pitch-picker .area-map {
   grid-template-columns: 1fr 1fr .8fr .8fr;
 }
@@ -618,13 +642,25 @@ dialog {
 }
 
 .resource-head {
-  flex-direction: column; justify-content: center; gap: 2px; padding: 3px; line-height: 1.15; border-top: 3px solid currentColor;
+  flex-direction: column; justify-content: center; gap: 2px; padding: 3px; line-height: 1.15; border-top: 4px solid currentColor;
 }
 .resource-head span, .resource-head small {
   font-size: 10px;
 }
-.resource-head strong {
-  font-size: 18px;
+.day-head.resource-head strong {
+  font-size: 18px; color: inherit;
+}
+.resource-head.training {
+  border-top-color: #397dbb; color: #245d8e; background: #eaf2fa;
+}
+.resource-head.main {
+  border-top-color: #148360; color: #175d47; background: #e6f3eb;
+}
+.resource-head.c1 {
+  border-top-color: #8460ae; color: #644389; background: #f0eafa;
+}
+.resource-head.artificial {
+  border-top-color: #b98427; color: #825e20; background: #fbf2df;
 }
 
 .slot-add {

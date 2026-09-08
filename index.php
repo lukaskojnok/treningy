@@ -47,10 +47,10 @@ try {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Rezervácie ihrísk | MFK Revúca</title>
-  <link rel="stylesheet" href="css/css.css?v=20260908-rules1">
+  <link rel="stylesheet" href="css/css.css?v=20260908-notice5">
   <script type="application/json" id="pitch-config"><?= json_encode(IHRISKA, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
   <script type="application/json" id="reservation-config"><?= json_encode($reservation_context, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-  <script src="js/calendar.js?v=20260908-match-a" defer></script>
+  <script src="js/calendar.js?v=20260908-notice5" defer></script>
 </head>
 <body class="planner-body">
   <main class="planner">
@@ -84,13 +84,15 @@ try {
       <p class="dialog-note">Upravovať môžeš rezervácie tímov, ktoré máš priradené. Obsadenosť sa overí pri uložení.</p>
       <fieldset class="event-type-picker"><legend>Čo pridávaš?</legend><label><input type="radio" name="type" value="training" required><span>Tréning<small>Len budúci týždeň, po otvorení termínov</small></span></label><label><input type="radio" name="type" value="match" required><span>Zápas<small>Bez časového predstihu a limitu Áčka</small></span></label></fieldset>
       <p id="type-help" class="type-help"></p>
-      <label>Tím<select name="team" required></select></label>
-      <label>Tréner<input name="coach" readonly></label>
-      <fieldset class="area-picker"><legend>Ihrisko a plocha</legend><button type="button" class="button" id="open-booking-map" aria-haspopup="dialog">▦ Vybrať z mapy ihrísk</button><strong id="booking-area-summary">Vyber plochu</strong><input type="hidden" name="field"><input type="hidden" name="area"></fieldset>
-      <div class="form-grid three"><label>Dátum<input type="date" name="date" required></label><label>Od<input type="time" name="start" min="08:00" max="21:30" step="1800" required></label><label>Do<input type="time" name="end" min="08:30" max="22:00" step="1800" required></label></div>
-      <label>Poznámka<textarea name="note" rows="2" maxlength="300" placeholder="Pomôcky, zameranie tréningu…"></textarea></label>
-      <p id="form-error" role="alert"></p>
-      <div class="dialog-actions"><button class="button danger" type="button" id="delete-event" hidden>Vymazať</button><span></span><button class="button" type="button" id="cancel-dialog">Zrušiť</button><button class="button primary" id="save-event" type="submit">Uložiť rezerváciu</button></div>
+      <div id="event-details" hidden>
+        <label>Tím<select name="team" required></select></label>
+        <label>Tréner<input name="coach" readonly></label>
+        <div class="form-grid three"><label>Dátum<input type="date" name="date" required></label><label>Od<input type="time" name="start" min="08:00" max="21:30" step="1800" required></label><label>Do<input type="time" name="end" min="08:30" max="22:00" step="1800" required></label></div>
+        <fieldset class="area-picker"><legend>Ihrisko a plocha</legend><button type="button" class="button" id="open-booking-map" aria-haspopup="dialog">▦ Vybrať z mapy ihrísk</button><strong id="booking-area-summary">Vyber plochu</strong><input type="hidden" name="field"><input type="hidden" name="area"></fieldset>
+        <label>Poznámka<textarea name="note" rows="2" maxlength="300" placeholder="Pomôcky, zameranie tréningu…"></textarea></label>
+        <p id="form-error" role="alert"></p>
+        <div class="dialog-actions"><button class="button danger" type="button" id="delete-event" hidden>Vymazať</button><span></span><button class="button" type="button" id="cancel-dialog">Zrušiť</button><button class="button primary" id="save-event" type="submit">Uložiť rezerváciu</button></div>
+      </div>
     </form>
   </dialog>
   <dialog id="pitch-picker" aria-labelledby="picker-title">
@@ -100,6 +102,11 @@ try {
     <p id="picker-summary" aria-live="polite"></p>
     <p id="picker-error" role="alert" class="danger"></p>
     <div class="dialog-actions"><button type="button" class="button" id="picker-all">Všetky ihriská</button><button type="button" class="button" id="picker-clear">Zrušiť výber</button><span></span><button type="button" class="button" id="picker-cancel">Zavrieť bez zmeny</button><button type="button" class="button primary" id="picker-apply">Použiť výber</button></div>
+  </dialog>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <div class="dialog-heading"><h2 id="confirm-title">Potvrdenie</h2><button class="button" type="button" id="confirm-close" aria-label="Zavrieť">✕</button></div>
+    <p id="confirm-message" class="dialog-note"></p>
+    <div class="dialog-actions"><span></span><button type="button" class="button" id="confirm-no">Nie</button><button type="button" class="button danger-button" id="confirm-yes">Áno, vymazať</button></div>
   </dialog>
 </body>
 </html>

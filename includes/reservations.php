@@ -87,13 +87,18 @@ function reservation_training_window() {
   $open_day = defined('TRENINGY_DEN_OTVORENIA_DALSIEHO_TYZDNA') ? (int) TRENINGY_DEN_OTVORENIA_DALSIEHO_TYZDNA : 4;
   if ($open_day < 1 || $open_day > 7) $open_day = 4;
   $day_names = [ 1 => 'pondelka', 2 => 'utorka', 3 => 'stredy', 4 => 'štvrtka', 5 => 'piatka', 6 => 'soboty', 7 => 'nedele' ];
-  $from = $today->modify('monday next week');
-  return [ 'isOpen' => (int) $today->format('N') >= $open_day, 'openDay' => $open_day, 'openDayLabel' => $day_names[$open_day], 'from' => $from->format('Y-m-d'), 'to' => $from->modify('+6 days')->format('Y-m-d') ];
+  $this_week = $today->modify('monday this week');
+  $opens_at = $this_week->modify('+' . ($open_day - 1) . ' days');
+  $current_to = $this_week->modify('+6 days');
+  $next_from = $this_week->modify('+7 days');
+  $next_to = $next_from->modify('+6 days');
+  $next_week_open = $today >= $opens_at;
+  return [ 'isOpen' => $next_week_open, 'openDay' => $open_day, 'openDayLabel' => $day_names[$open_day], 'opensAt' => $opens_at->format('Y-m-d'), 'from' => $today->format('Y-m-d'), 'to' => ($next_week_open ? $next_to : $current_to)->format('Y-m-d'), 'currentTo' => $current_to->format('Y-m-d'), 'nextFrom' => $next_from->format('Y-m-d'), 'nextTo' => $next_to->format('Y-m-d') ];
 }
 
 function reservation_is_started($date, $start) {
-  $event_start = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $date . ' ' . substr($start, 0, 5), reservation_timezone());
-  return !$event_start || $event_start <= reservation_now();
+  if (!reservation_date($date) || !preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/D', substr($start, 0, 5))) return true;
+  return $date . ' ' . substr($start, 0, 5) <= reservation_now()->format('Y-m-d H:i');
 }
 
 function reservation_week_range($date) {
@@ -102,15 +107,13 @@ function reservation_week_range($date) {
   return [ $from->format('Y-m-d'), $from->modify('+6 days')->format('Y-m-d') ];
 }
 
-function reservation_training_date_allowed($valid, $old) {
+function reservation_training_date_allowed($valid) {
   if ($valid['type'] !== 'training') return;
-  if ($old && $old['event_type'] === 'training') {
-    [ $old_week_from, $old_week_to ] = reservation_week_range($old['reservation_date']);
-    if ($valid['date'] >= $old_week_from && $valid['date'] <= $old_week_to) return;
-  }
   $window = reservation_training_window();
-  if (!$window['isOpen']) throw new ReservationError('Tréningy na budúci týždeň môžeš pridávať až od ' . $window['openDayLabel'] . '.', 403);
-  if ($valid['date'] < $window['from'] || $valid['date'] > $window['to']) throw new ReservationError('Tréning môžeš pridať iba na budúci týždeň od pondelka do nedele.', 403);
+  if ($valid['date'] < $window['from']) throw new ReservationError('Tréning nemožno uložiť do minulosti.', 403);
+  if ($valid['date'] <= $window['currentTo']) return;
+  if (!$window['isOpen']) throw new ReservationError('Tréningy na ďalší týždeň môžeš pridávať až od ' . $window['openDayLabel'] . '. Do konca aktuálneho týždňa môžeš rezervácie naďalej pridávať a upravovať.', 403);
+  if ($valid['date'] > $window['nextTo']) throw new ReservationError('Tréning môžeš pridať najviac do konca nasledujúceho týždňa.', 403);
 }
 
 function reservation_team_a_limit($team) {
@@ -158,7 +161,11 @@ function reservation_list(PDO $db, $context, $from, $to) {
   $events = [];
   while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
     $id = (int) $row['id'];
-    if (!isset($events[$id])) $events[$id] = [ 'id' => $id, 'version' => (int) $row['version'], 'type' => $row['event_type'], 'team' => $row['team_key'], 'title' => TEAMS[$row['team_key']] ?? $row['team_key'], 'coach' => $row['coach_name'], 'date' => $row['reservation_date'], 'start' => substr($row['start_time'], 0, 5), 'end' => substr($row['end_time'], 0, 5), 'field' => $row['field_key'], 'area' => '', 'note' => $row['note'], 'canEdit' => reservation_team_allowed($context, $row['team_key']) && !reservation_is_started($row['reservation_date'], $row['start_time']) ];
+    if (!isset($events[$id])) {
+      $team_allowed = reservation_team_allowed($context, $row['team_key']);
+      $started = reservation_is_started($row['reservation_date'], $row['start_time']);
+      $events[$id] = [ 'id' => $id, 'version' => (int) $row['version'], 'type' => $row['event_type'], 'team' => $row['team_key'], 'title' => TEAMS[$row['team_key']] ?? $row['team_key'], 'coach' => $row['coach_name'], 'date' => $row['reservation_date'], 'start' => substr($row['start_time'], 0, 5), 'end' => substr($row['end_time'], 0, 5), 'field' => $row['field_key'], 'area' => '', 'note' => $row['note'], 'canEdit' => $team_allowed && !$started, 'editReason' => $started ? 'Udalosť už začala a nemožno ju upraviť. Aktuálny čas servera: ' . reservation_now()->format('d. m. Y H:i') . '.' : (!$team_allowed ? 'Tento tím nemáš priradený, preto jeho rezerváciu nemôžeš upraviť.' : '') ];
+    }
     $events[$id]['area'] .= ($events[$id]['area'] === '' ? '' : ',') . $row['part_key'];
   }
   return array_values($events);
@@ -190,7 +197,7 @@ function reservation_mutate(PDO $db, $context, $action, $data) {
       $query->execute([ 'id' => $id ]);
     } else {
       if (reservation_is_started($valid['date'], $valid['start'])) throw new ReservationError('Rezerváciu nemožno uložiť do minulosti ani na čas, ktorý už začal.');
-      reservation_training_date_allowed($valid, $old);
+      reservation_training_date_allowed($valid);
       // Aktualne citanie pod zamkom: kontrola plati aj pre dlho otvoreny prehliadac.
       $query = $db->prepare( "SELECT r.id, p.part_key FROM reservations r INNER JOIN reservation_parts p ON p.reservation_id=r.id WHERE r.reservation_date=:date AND r.field_key=:field AND r.start_time < :end AND r.end_time > :start AND r.id <> :id FOR UPDATE" );
       $query->execute([ 'date' => $valid['date'], 'field' => $valid['field'], 'end' => $valid['end'], 'start' => $valid['start'], 'id' => $id ]);

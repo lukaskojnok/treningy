@@ -124,7 +124,7 @@
       columns += '</div>';
     }
     const template = `58px ${widths.map(w => `minmax(${w}px, 1fr)`).join(' ')}`;
-    $('calendar').innerHTML = `<div id="calendar-scroller"><div class="calendar-inner" style="min-width:${58 + widths.reduce((sum, w) => sum + w, 0)}px;--calendar-columns:${template}"><div class="calendar-head">${heads}</div><div class="calendar-body">${columns}</div></div></div>`;
+    $('calendar').innerHTML = `<div id="calendar-scroller" tabindex="0" role="region" aria-label="Kalendár rezervácií, posúvateľný do strán aj zvislo"><div class="calendar-inner" style="min-width:${58 + widths.reduce((sum, w) => sum + w, 0)}px;--calendar-columns:${template}"><div class="calendar-head">${heads}</div><div class="calendar-body">${columns}</div></div></div>`;
     const scroller = $('calendar-scroller');
     scroller.scrollLeft = horizontalScroll;
     scroller.onscroll = () => { if (mode !== 'fields') calendarScroll = scroller.scrollTop; };

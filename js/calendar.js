@@ -29,7 +29,7 @@
   const minutes = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
   const clock = n => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
   const escape = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-  let selectedDay = new Date(), week = monday(new Date()), editing = null, mode = 'calendar';
+  let selectedDay = new Date(), week = monday(new Date()), editing = null, mode = 'quick';
   const events = [];
   const account = JSON.parse($('reservation-config').textContent);
   const allowedTeams = Object.keys(account.teams);
@@ -122,7 +122,7 @@
       columns += '</div>';
     }
     const template = `58px ${widths.map(w => `minmax(${w}px, 1fr)`).join(' ')}`;
-    $('calendar').innerHTML = `<div id="calendar-scroller"><div class="calendar-inner" style="min-width:${58 + widths.reduce((sum, w) => sum + w, 0)}px;--calendar-columns:${template}"><div class="calendar-head">${heads}</div><div class="calendar-body">${columns}</div></div></div>`;
+    $('calendar').innerHTML = `<div id="calendar-scroller" tabindex="0" role="region" aria-label="Kalendár rezervácií, posúvateľný do strán aj zvislo"><div class="calendar-inner" style="min-width:${58 + widths.reduce((sum, w) => sum + w, 0)}px;--calendar-columns:${template}"><div class="calendar-head">${heads}</div><div class="calendar-body">${columns}</div></div></div>`;
     const scroller = $('calendar-scroller');
     scroller.scrollLeft = horizontalScroll;
     scroller.onscroll = () => { if (mode !== 'fields') calendarScroll = scroller.scrollTop; };
@@ -144,7 +144,7 @@
         const started = value < today || (value === today && slot <= currentMinutes);
         const reservations = events.filter(event => event.date === value && event.start === start);
         const saved = reservations.map(event => `<button type="button" class="quick-reservation${event.type === 'match' ? ' is-match' : ''}${isOwnTeam(event) ? '' : ' event-muted'}" data-id="${event.id}" title="Otvoriť detail"><b>✓</b><span>${event.type === 'match' ? 'Zápas · ' : ''}${escape(event.title)}</span><small>${event.start} – ${event.end} · ${escape(event.field)} · ${escape(areaLabel(event.field, event.area))}</small></button>`).join('');
-        rows.push(`<div class="quick-row${started ? ' is-past' : ''}"><time datetime="${value}T${start}">${start}</time><div class="quick-reservations">${saved}</div><button type="button" class="button quick-add" data-quick-date="${value}" data-quick-time="${start}"${started || !allowedTeams.length || !loaded ? ' disabled' : ''}>＋ Pridať tréning</button></div>`);
+        rows.push(`<div class="quick-row${started ? ' is-past' : ''}"><time datetime="${value}T${start}">${start}<small class="quick-date">${date.getDate()}. ${date.getMonth() + 1}. · ${date.toLocaleDateString('sk-SK', {weekday: 'long'})}</small></time><div class="quick-reservations">${saved}</div><button type="button" class="button quick-add" data-quick-date="${value}" data-quick-time="${start}"${started || !allowedTeams.length || !loaded ? ' disabled' : ''}>＋ Pridať tréning</button></div>`);
       }
       days.push(`<article class="quick-day"><h3><strong>${date.toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric', year: 'numeric'})}</strong><span>${date.toLocaleDateString('sk-SK', {weekday: 'long'})}</span></h3>${rows.join('')}</article>`);
     }

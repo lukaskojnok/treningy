@@ -1,0 +1,337 @@
+/* Spolocne pravidla a citatelny datum pri kazdom termine. */
+.planner-body {
+  min-width: 0;
+}
+.planner, .heading, .toolbar > *, .filter, .map-field, .pitch-card, .form-grid > *, .dialog-heading > *, .quick-reservations {
+  min-width: 0;
+}
+.toolbar {
+  flex-wrap: wrap; gap: 12px; padding: 16px 0;
+}
+.date-nav {
+  flex-wrap: wrap;
+}
+.legend, #field-legend, .planner-footer {
+  flex-wrap: wrap;
+}
+.legend span {
+  min-width: 0;
+}
+.legend i, .brand-mark, .dialog-heading > button {
+  flex-shrink: 0;
+}
+.quick-row {
+  grid-template-columns: 145px minmax(0, 1fr) 130px;
+}
+.quick-date {
+  display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; font-weight: 500; color: #52645a;
+}
+.quick-reservation span, .quick-reservation small, .pitch-half, .pitch-booking, .map-part, .map-field > strong, .dialog-note, #picker-summary, #picker-error, #form-error, #calendar-status, .demo-label {
+  overflow-wrap: anywhere; white-space: normal;
+}
+.quick-reservation span {
+  overflow: visible;
+}
+#calendar-view, #calendar, #calendar-scroller {
+  min-width: 0; max-width: 100%;
+}
+#calendar-scroller {
+  height: clamp(300px, calc(100dvh - 270px), 760px);
+}
+#calendar-scroller:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+.time-axis {
+  border-right: 1px solid var(--border); box-shadow: 3px 0 6px #17231d0a;
+}
+dialog {
+  max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain;
+}
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+.dialog-heading {
+  align-items: flex-start;
+}
+.dialog-heading h2, .type-help, #booking-area-summary {
+  overflow-wrap: anywhere;
+}
+.dialog-actions, .area-tools {
+  flex-wrap: wrap;
+}
+fieldset {
+  min-width: 0;
+}
+textarea {
+  max-width: 100%; resize: vertical;
+}
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+@media (max-width: 1100px) {
+  #pitches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .field-controls {
+    flex-wrap: wrap;
+  }
+  .field-controls > div:first-child {
+    flex-basis: 100%;
+  }
+  .filter {
+    margin-left: 0;
+  }
+  .legend {
+    gap: 12px;
+  }
+  .legend-tip {
+    margin-left: 0;
+  }
+  .wrapper {
+    width: 68%; padding-right: 40px; padding-left: 40px;
+  }
+  .auth-body::after {
+    width: 32%;
+  }
+}
+@media (max-width: 760px) {
+  .planner {
+    padding: 0 12px;
+  }
+  .topbar {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: 10px; padding: 16px 0;
+  }
+  .heading {
+    grid-column: 1; grid-row: 1;
+  }
+  .topbar .menu-wrap {
+    grid-column: 2; grid-row: 1; align-self: start;
+  }
+  .topbar .demo-label {
+    grid-column: 1 / -1; grid-row: 2;
+  }
+  #add-event {
+    grid-column: 1 / -1; grid-row: 3; width: 100%;
+  }
+  h1 {
+    font-size: 23px;
+  }
+  .button, .site-nav-link, .auth-back {
+    min-height: 44px;
+  }
+  .button {
+    font-size: 13px;
+  }
+  .menu-toggle {
+    width: 44px;
+  }
+  #main-menu {
+    top: 50px; max-width: calc(100vw - 24px);
+  }
+  .toolbar {
+    gap: 12px; padding: 14px 0;
+  }
+  .switch {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 6px;
+  }
+  .switch .button + .button {
+    border-left: 1px solid #d6ded9;
+  }
+  .switch .button.selected {
+    border-color: var(--primary);
+  }
+  .type-filter {
+    width: 100%;
+  }
+  .type-filter .button {
+    flex: 1;
+  }
+  .date-nav {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; width: 100%; gap: 6px;
+  }
+  .date-nav h2 {
+    grid-column: 1 / -1; grid-row: 1; margin: 0 0 4px; font-size: 16px; text-align: center;
+  }
+  .filter, #open-field-filter {
+    width: 100%;
+  }
+  #filter-summary {
+    min-width: 0; max-width: none;
+  }
+  #field-legend {
+    flex-wrap: wrap; width: 100%; gap: 8px 16px;
+  }
+  .legend-tip {
+    flex-basis: 100%;
+  }
+  .legend-tip::after {
+    display: block; content: "Kalendár posúvaj prstom do strán aj nahor a nadol.";
+  }
+  #calendar-scroller {
+    height: 62vh; height: 62dvh; min-height: 300px;
+  }
+  .field-controls, .pitch-card, .quick-heading {
+    padding: 16px;
+  }
+  .field-controls {
+    gap: 12px;
+  }
+  .field-controls label {
+    flex: 1; min-width: 0;
+  }
+  .field-controls input[type="date"] {
+    flex: 1; min-width: 0; max-width: 100%;
+  }
+  .time-slots {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 10px;
+  }
+  .time-slots .button {
+    padding: 7px 4px;
+  }
+  .quick-heading {
+    flex-direction: column; align-items: flex-start; gap: 10px;
+  }
+  .quick-row {
+    grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 12px;
+  }
+  .quick-row > time {
+    grid-column: 1; grid-row: 1; font-size: 17px;
+  }
+  .quick-add {
+    grid-column: 2; grid-row: 1; width: auto;
+  }
+  .quick-reservations {
+    grid-column: 1 / -1; grid-row: 2;
+  }
+  .quick-reservations:empty {
+    display: none;
+  }
+  .quick-reservation {
+    min-height: 48px; padding: 8px;
+  }
+  .quick-reservation small {
+    grid-column: 2 / -1; font-size: 11px;
+  }
+  .quick-reservation b {
+    grid-row: 1 / 3;
+  }
+  .quick-reservation span {
+    grid-column: 2 / -1;
+  }
+  .quick-day h3 {
+    flex-wrap: wrap; gap: 5px 9px;
+  }
+  dialog {
+    max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); padding: 16px;
+  }
+  .area-map, #pitch-picker .area-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px;
+  }
+  #pitch-picker .map-pitch {
+    height: 180px;
+  }
+  .dialog-actions {
+    gap: 8px;
+  }
+  .dialog-actions > span {
+    display: none;
+  }
+  .dialog-actions .button {
+    flex: 1 1 auto;
+  }
+  .dialog-actions .primary {
+    flex-basis: 100%;
+  }
+  input, select, textarea {
+    min-height: 44px; font-size: 16px;
+  }
+  #booking-area-summary {
+    display: block; margin: 10px 0 0;
+  }
+  .planner-footer {
+    gap: 6px 16px; padding: 16px 0; padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .auth-body::after {
+    display: none;
+  }
+  .wrapper {
+    width: 100%; min-height: 100dvh; padding: 28px 24px;
+  }
+  .auth-form {
+    margin: 40px auto;
+  }
+  .auth-back {
+    display: inline-flex; align-items: center;
+  }
+  .site {
+    width: calc(100% - 24px);
+  }
+  .site-header, .site-nav {
+    flex-wrap: wrap;
+  }
+  .site-header {
+    gap: 12px; padding: 16px 0;
+  }
+  .site-main {
+    padding: 24px 0 40px;
+  }
+  .content-card {
+    padding: 24px;
+  }
+}
+@media (max-width: 480px) {
+  #pitches {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .form-grid.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .form-grid.three > :first-child {
+    grid-column: 1 / -1;
+  }
+  .event-type-picker span {
+    padding: 10px;
+  }
+  .field-controls label {
+    flex-basis: 100%;
+  }
+  .field-controls .time-stepper {
+    justify-content: space-between; width: 100%;
+  }
+  .dialog-heading h2 {
+    font-size: 16px;
+  }
+  .wrapper {
+    padding: 24px 20px;
+  }
+  .auth-form h3 {
+    font-size: 34px;
+  }
+}
+@media (max-width: 380px) {
+  .planner {
+    padding: 0 8px;
+  }
+  .area-map, #pitch-picker .area-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .quick-row {
+    gap: 6px; padding: 10px 8px;
+  }
+  .quick-add {
+    padding: 7px 9px; font-size: 12px;
+  }
+  .quick-date {
+    font-size: 10px;
+  }
+}
+@media (pointer: coarse) {
+  .button, .pitch-booking, .quick-reservation {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn, .form-control {
+    transition: none;
+  }
+}

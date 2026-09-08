@@ -48,9 +48,10 @@ try {
   <meta name="robots" content="noindex, nofollow">
   <title>Rezervácie ihrísk | MFK Revúca</title>
   <link rel="stylesheet" href="css/css.css?v=20260908-quick1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260908-1">
   <script type="application/json" id="pitch-config"><?= json_encode(IHRISKA, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
   <script type="application/json" id="reservation-config"><?= json_encode($reservation_context, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-  <script src="js/calendar.js?v=20260908-quick1" defer></script>
+  <script src="js/calendar.js?v=20260908-quick-default1" defer></script>
 </head>
 <body class="planner-body">
   <main class="planner">
@@ -60,12 +61,12 @@ try {
       <button class="button primary" id="add-event">＋ Nová rezervácia</button>
       <div class="menu-wrap">
         <button class="button menu-toggle" id="menu-toggle" aria-label="Hlavné menu" aria-expanded="false" aria-controls="main-menu"><span></span><span></span><span></span></button>
-        <nav id="main-menu" hidden aria-label="Hlavná navigácia"><strong>Tréningy · MFK Revúca</strong><a href="index.php">Prehľad</a><button type="button" id="menu-quick">Rýchla editácia</button><button type="button" id="menu-calendar">Kalendár rezervácií</button><button type="button" id="menu-day">Denný kalendár častí</button><button type="button" id="menu-fields">Prehľad ihrísk</button><a href="?logout=1">Odhlásiť sa ↗</a></nav>
+        <nav id="main-menu" hidden aria-label="Hlavná navigácia"><strong>Tréningy · MFK Revúca</strong><button type="button" id="menu-quick">Rýchla editácia tréningov</button><button type="button" id="menu-calendar">Kalendár rezervácií</button><button type="button" id="menu-day">Denný kalendár častí</button><button type="button" id="menu-fields">Prehľad ihrísk</button><a href="?logout=1">Odhlásiť sa ↗</a></nav>
       </div>
     </header>
     <div id="calendar-status" role="status" hidden></div><button type="button" class="button" id="reload-calendar" hidden>Obnoviť kalendár</button>
     <section class="toolbar" aria-label="Ovládanie kalendára">
-      <div class="switch"><button class="button selected" id="view-calendar" aria-pressed="true">Týždeň</button><button class="button" id="view-day" aria-pressed="false">Deň · časti ihrísk</button><button class="button" id="view-fields" aria-pressed="false">Ihriská a plochy</button><button class="button" id="view-quick" aria-pressed="false">Rýchla editácia</button></div>
+      <div class="switch"><button class="button selected" id="view-quick" aria-pressed="true">Rýchla editácia</button><button class="button" id="view-calendar" aria-pressed="false">Týždeň</button><button class="button" id="view-day" aria-pressed="false">Deň · časti ihrísk</button><button class="button" id="view-fields" aria-pressed="false">Ihriská a plochy</button></div>
       <div class="type-filter" role="group" aria-label="Filtrovať typ udalosti"><button type="button" class="button selected" data-type-filter="all" aria-pressed="true">Všetko</button><button type="button" class="button" data-type-filter="training" aria-pressed="false">Tréningy</button><button type="button" class="button match-filter" data-type-filter="match" aria-pressed="false">Zápasy</button></div>
       <div class="date-nav"><button class="button" id="prev" aria-label="Predchádzajúci týždeň">←</button><button class="button" id="today">Dnes</button><button class="button" id="next" aria-label="Nasledujúci týždeň">→</button><h2 id="date-heading"></h2></div>
       <div class="filter"><button type="button" class="button" id="open-field-filter" aria-haspopup="dialog">Ihriská a časti: <span id="filter-summary">Všetky ihriská</span> ▦</button></div>
@@ -77,7 +78,6 @@ try {
       <div id="time-slots" class="time-slots" role="group" aria-label="Čas obsadenosti po 30 minútach"></div><div id="pitches"></div>
     </section>
     <section id="quick-view" hidden aria-label="Rýchla editácia tréningov">
-      <div class="quick-heading"><div><p class="eyebrow">JEDNODUCHÉ PRIDÁVANIE</p><h2>Rýchla editácia tréningov</h2><p>Vyber čas začiatku. Tréning sa pridá na 90 minút.</p></div><span>✓ Kliknutím na uloženú rezerváciu otvoríš jej detail.</span></div>
       <div id="quick-list"></div>
     </section>
     <footer class="planner-footer"><span>Spoločný kalendár trénerov</span><span>08:00 – 22:00 · rezervácie ihrísk</span></footer>

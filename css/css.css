@@ -684,3 +684,75 @@ dialog {
 .time-stepper button:disabled {
   opacity: .35; cursor: default;
 }
+.quick-heading {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-bottom: 16px; padding: 20px; border: 1px solid var(--border); background: #fff;
+}
+.quick-heading .eyebrow {
+  margin-bottom: 5px;
+}
+.quick-heading p {
+  margin: 5px 0 0; color: var(--muted);
+}
+.quick-heading > span {
+  font-size: 12px; color: var(--success);
+}
+#quick-list {
+  display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 16px;
+}
+.quick-day {
+  border: 1px solid var(--border); background: #fff;
+}
+.quick-day h3 {
+  position: sticky; z-index: 2; top: 0; display: flex; align-items: baseline; gap: 9px; margin: 0; padding: 13px 15px; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.2; background: #edf6f0;
+}
+.quick-day h3 span {
+  font-size: 12px; font-weight: 600; text-transform: capitalize; color: var(--muted);
+}
+.quick-row {
+  display: grid; grid-template-columns: 58px minmax(0, 1fr) 130px; align-items: center; min-height: 53px; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #edf1ee;
+}
+.quick-row:last-child {
+  border-bottom: 0;
+}
+.quick-row > time {
+  font-size: 14px; font-weight: 800;
+}
+.quick-row.is-past {
+  opacity: .45; background: #f8f9f8;
+}
+.quick-reservations {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.quick-reservation {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 7px; width: 100%; padding: 5px 8px; border: 1px solid #cbe3d7; text-align: left; color: #175d47; background: #e6f3eb;
+}
+.quick-reservation b {
+  display: grid; place-items: center; width: 20px; height: 20px; color: #fff; background: var(--success);
+}
+.quick-reservation span {
+  overflow: hidden; font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap;
+}
+.quick-reservation small {
+  font-size: 10px;
+}
+.quick-reservation.is-match {
+  border-color: #efb8c2; color: #7d1c2e; background: #fde8ec;
+}
+.quick-reservation.is-match b {
+  background: #b4233d;
+}
+.quick-add {
+  width: 130px;
+}
+.quick-add:disabled {
+  opacity: .35; cursor: default;
+}
+#quick-team-dialog {
+  width: 460px;
+}
+.quick-team-options {
+  display: grid; gap: 10px;
+}
+.quick-team-options .button {
+  justify-content: flex-start; min-height: 48px; padding: 11px 14px; font-size: 14px;
+}

@@ -61,3 +61,11 @@ NÁHĽAD
 nahlad.html zostáva samostatná ukážka bez PHP a databázy. Používa js/calendar-demo.js.
 Produkčný index.php používa js/calendar.js a načítava aktuálne údaje z API.
 Responzívna verzia zatiaľ nie je spracovaná.
+
+RÝCHLA EDITÁCIA
+
+Pohľad Rýchla editácia vypíše od dnešného dňa všetky otvorené termíny po 30 minútach.
+Kliknutie na Pridať tréning vytvorí 90-minútový termín. Ak má tréner jeden tím, pokračuje
+rovno na mapu ihrísk; pri viacerých tímoch si najprv vyberie tím. Tlačidlo Uložiť rezerváciu
+v mape používa rovnaké API, serverovú validáciu, limity Áčka a transakčnú kontrolu kolízií
+ako plný formulár. Uložené rezervácie sú v zozname označené fajkou a otvoria plný detail.

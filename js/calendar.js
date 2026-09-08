@@ -34,7 +34,7 @@
   const account = JSON.parse($('reservation-config').textContent);
   const allowedTeams = Object.keys(account.teams);
   const isOwnTeam = event => Object.prototype.hasOwnProperty.call(account.teams, event.team);
-  let editingVersion = null, saving = false, loaded = false, loadSequence = 0;
+  let editingVersion = null, saving = false, loaded = false, loadSequence = 0, quickBooking = false, quickTerm = null;
   $('field-date').value = localDate(new Date());
   const typeVisible = e => typeFilter === 'all' || e.type === typeFilter;
   const visible = e => typeVisible(e) && selectedParts(e.field, e.area).some(part => filterSelection[e.field]?.includes(part));
@@ -57,7 +57,8 @@
     const sequence = ++loadSequence;
     loaded = false; $('add-event').disabled = true;
     events.splice(0); renderView(); calendarStatus('Načítavam rezervácie…');
-    const from = localDate(week), to = localDate(dayAt(week, 6));
+    const from = mode === 'quick' ? account.trainingWindow.from : localDate(week);
+    const to = mode === 'quick' ? account.trainingWindow.to : localDate(dayAt(week, 6));
     try {
       const result = await api(null, '?from=' + from + '&to=' + to);
       if (sequence !== loadSequence) return;
@@ -67,6 +68,15 @@
     } catch (error) { if (sequence === loadSequence) calendarStatus(error.message, true); }
   }
   function renderView() {
+    const quick = mode === 'quick';
+    $('calendar-view').hidden = mode === 'fields' || quick;
+    $('fields-view').hidden = mode !== 'fields';
+    $('quick-view').hidden = !quick;
+    document.querySelector('.type-filter').hidden = quick;
+    document.querySelector('.date-nav').hidden = quick;
+    document.querySelector('.filter').hidden = quick;
+    document.querySelector('.legend').hidden = quick;
+    if (quick) { renderQuick(); return; }
     const widths = [];
     const previousScroll = $('calendar-scroller');
     const horizontalScroll = previousScroll ? previousScroll.scrollLeft : 0;
@@ -119,6 +129,27 @@
     restoreCalendarScroll();
     renderFields();
   }
+  function renderQuick() {
+    const from = new Date(account.trainingWindow.from + 'T12:00:00');
+    const to = new Date(account.trainingWindow.to + 'T12:00:00');
+    const today = localDate(new Date());
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const days = [];
+    for (let date = new Date(from); date <= to; date = dayAt(date, 1)) {
+      const value = localDate(date);
+      const rows = [];
+      for (let slot = 480; slot <= 1230; slot += 30) {
+        const start = clock(slot), end = clock(slot + 90);
+        const started = value < today || (value === today && slot <= currentMinutes);
+        const reservations = events.filter(event => event.date === value && event.start === start);
+        const saved = reservations.map(event => `<button type="button" class="quick-reservation${event.type === 'match' ? ' is-match' : ''}${isOwnTeam(event) ? '' : ' event-muted'}" data-id="${event.id}" title="Otvoriť detail"><b>✓</b><span>${event.type === 'match' ? 'Zápas · ' : ''}${escape(event.title)}</span><small>${event.start} – ${event.end} · ${escape(event.field)} · ${escape(areaLabel(event.field, event.area))}</small></button>`).join('');
+        rows.push(`<div class="quick-row${started ? ' is-past' : ''}"><time datetime="${value}T${start}">${start}</time><div class="quick-reservations">${saved}</div><button type="button" class="button quick-add" data-quick-date="${value}" data-quick-time="${start}"${started || !allowedTeams.length || !loaded ? ' disabled' : ''}>＋ Pridať tréning</button></div>`);
+      }
+      days.push(`<article class="quick-day"><h3><strong>${date.toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric', year: 'numeric'})}</strong><span>${date.toLocaleDateString('sk-SK', {weekday: 'long'})}</span></h3>${rows.join('')}</article>`);
+    }
+    $('quick-list').innerHTML = days.join('') || '<p>Momentálne nie sú otvorené žiadne termíny na pridanie tréningu.</p>';
+  }
   function renderFields() {
     const date = $('field-date').value, time = $('field-time').value;
     $('selected-time').textContent = time;
@@ -136,6 +167,10 @@
   }
   function showForm(data = {}) {
     if (!loaded || saving) return;
+    prepareForm(data);
+    $('event-dialog').showModal();
+  }
+  function prepareForm(data = {}) {
     const form = $('event-form'); form.reset(); editing = data.id || null; editingVersion = data.version || null;
     const canEdit = editing ? data.canEdit : allowedTeams.length > 0;
     form.dataset.canEdit = String(canEdit);
@@ -146,7 +181,7 @@
     const defaults = {date: '', start: '', end: '', field: '', area: '', team: allowedTeams.length === 1 ? allowedTeams[0] : '', coach: account.coach, ...data};
     Object.entries(defaults).forEach(([k, v]) => { if (form.elements.namedItem(k)) form.elements.namedItem(k).value = v; });
     $('dialog-title').textContent = editing ? 'Upraviť rezerváciu' : 'Nová rezervácia';
-    $('delete-event').hidden = !editing || !canEdit; $('form-error').textContent = canEdit ? '' : (data.editReason || 'Túto rezerváciu nemôžeš upraviť.'); updateBookingSummary(); updateFormStep(); updateBookingMapAvailability(); $('event-dialog').showModal();
+    $('delete-event').hidden = !editing || !canEdit; $('form-error').textContent = canEdit ? '' : (data.editReason || 'Túto rezerváciu nemôžeš upraviť.'); updateBookingSummary(); updateFormStep(); updateBookingMapAvailability();
   }
   function formatReservationDate(value) {
     if (!value) return '';
@@ -225,6 +260,8 @@
     $('picker-title').textContent = context === 'filter' ? 'Zobraziť ihriská a časti' : `Vybrať plochu na rezerváciu${term ? ' · ' + term : ''}`;
     $('picker-help').textContent = context === 'filter' ? 'Označ ľubovoľné časti aj z viacerých ihrísk. Kalendár zobrazí všetky rezervácie, ktoré do výberu zasahujú.' : 'Označ štvrtinu, dve susedné štvrtiny alebo celé ihrisko. Obsadenosť platí pre termín vo formulári.';
     $('picker-all').hidden = context !== 'filter';
+    $('picker-apply').textContent = quickBooking ? 'Uložiť rezerváciu' : 'Použiť výber';
+    $('picker-cancel').textContent = quickBooking ? 'Zrušiť' : 'Zavrieť bez zmeny';
     $('picker-error').textContent = '';
     renderPicker(); $('pitch-picker').showModal();
   }
@@ -251,14 +288,36 @@
   };
   $('picker-all').onclick = () => { draft = Object.fromEntries(Object.entries(parts).map(([id, list]) => [id, [...list]])); renderPicker(); };
   $('picker-clear').onclick = () => { Object.keys(draft).forEach(id => { draft[id] = []; }); renderPicker(); };
-  ['picker-cancel', 'picker-close'].forEach(id => $(id).onclick = () => $('pitch-picker').close());
-  $('picker-apply').onclick = () => {
+  function closePicker() {
+    $('pitch-picker').close();
+    quickBooking = false;
+    quickTerm = null;
+    $('picker-apply').textContent = 'Použiť výber';
+    $('picker-cancel').textContent = 'Zavrieť bez zmeny';
+  }
+  ['picker-cancel', 'picker-close'].forEach(id => $(id).onclick = closePicker);
+  $('picker-apply').onclick = async () => {
     const ids = Object.keys(draft).filter(id => draft[id].length);
     if (!ids.length) { $('picker-error').textContent = 'Vyber aspoň jednu časť ihriska.'; return; }
     if (pickerMode === 'booking') {
       const id = ids[0], area = draft[id].join(',');
       if (ids.length !== 1 || !validArea(id, area)) { $('picker-error').textContent = 'Vyber štvrtinu, dve susedné štvrtiny alebo celé jedno ihrisko.'; return; }
       const form = $('event-form'); form.elements.field.value = id; form.elements.area.value = area; updateBookingSummary();
+      if (quickBooking) {
+        const data = Object.fromEntries(new FormData(form));
+        $('picker-apply').disabled = true;
+        $('picker-error').textContent = '';
+        try {
+          await api({...data, action: 'save', id: 0, version: 0});
+          closePicker();
+          await render();
+        } catch (error) {
+          $('picker-error').textContent = error.message;
+        } finally {
+          $('picker-apply').disabled = false;
+        }
+        return;
+      }
     } else {
       filterSelection = Object.fromEntries(Object.entries(draft).map(([id, list]) => [id, [...list]]));
       const all = Object.entries(parts).every(([id, list]) => draft[id].length === list.length);
@@ -272,12 +331,14 @@
   $('morning').onclick = () => { calendarScroll = 0; restoreCalendarScroll(); };
   $('afternoon').onclick = () => { calendarScroll = 432; restoreCalendarScroll(); };
   function setView(view) {
-    mode = view; $('calendar-view').hidden = view === 'fields'; $('fields-view').hidden = view !== 'fields';
-    ['calendar', 'day', 'fields'].forEach(v => { $('view-' + v).classList.toggle('selected', v === view); $('view-' + v).setAttribute('aria-pressed', String(v === view)); });
+    mode = view;
+    ['calendar', 'day', 'fields', 'quick'].forEach(v => { $('view-' + v).classList.toggle('selected', v === view); $('view-' + v).setAttribute('aria-pressed', String(v === view)); });
     $('main-menu').hidden = true; $('menu-toggle').setAttribute('aria-expanded', 'false');
     render();
   }
   document.addEventListener('click', event => {
+    const quickAdd = event.target.closest('[data-quick-date]');
+    if (quickAdd) { startQuickReservation(quickAdd.dataset.quickDate, quickAdd.dataset.quickTime); return; }
     const el = event.target.closest('[data-id], [data-time], [data-field]');
     if (el?.dataset.id) showForm(events.find(e => e.id === Number(el.dataset.id)));
     else if (el?.dataset.time) showForm({date: el.dataset.date, start: el.dataset.time, end: clock(Math.min(minutes(el.dataset.time) + 90, 1320)), ...(el.dataset.field ? {field: el.dataset.field, area: el.dataset.area} : {})});
@@ -286,7 +347,24 @@
   });
   $('menu-toggle').onclick = () => { $('main-menu').hidden = !$('main-menu').hidden; $('menu-toggle').setAttribute('aria-expanded', String(!$('main-menu').hidden)); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('main-menu').hidden = true; $('menu-toggle').setAttribute('aria-expanded', 'false'); } });
-  ['calendar', 'day', 'fields'].forEach(v => { $('view-' + v).onclick = () => setView(v); $('menu-' + v).onclick = () => setView(v); });
+  ['calendar', 'day', 'fields', 'quick'].forEach(v => { $('view-' + v).onclick = () => setView(v); $('menu-' + v).onclick = () => setView(v); });
+  function startQuickReservation(date, start) {
+    if (!loaded || saving || !allowedTeams.length) return;
+    quickTerm = {date, start, end: clock(minutes(start) + 90)};
+    if (allowedTeams.length === 1) { continueQuickReservation(allowedTeams[0]); return; }
+    $('quick-team-options').innerHTML = allowedTeams.map(team => `<button type="button" class="button" data-quick-team="${escape(team)}">${escape(account.teams[team])}</button>`).join('');
+    $('quick-team-dialog').showModal();
+  }
+  function continueQuickReservation(team) {
+    if (!quickTerm || !account.teams[team]) return;
+    if ($('quick-team-dialog').open) $('quick-team-dialog').close();
+    prepareForm({type: 'training', team, date: quickTerm.date, start: quickTerm.start, end: quickTerm.end, note: ''});
+    quickBooking = true;
+    openPicker('booking');
+  }
+  $('quick-team-options').onclick = event => { const button = event.target.closest('[data-quick-team]'); if (button) continueQuickReservation(button.dataset.quickTeam); };
+  $('quick-team-close').onclick = () => { $('quick-team-dialog').close(); quickTerm = null; };
+  $('quick-team-dialog').addEventListener('cancel', () => { quickTerm = null; });
   function moveDate(direction) {
     if (mode !== 'calendar') { selectedDay = dayAt(selectedDay, direction); week = monday(selectedDay); }
     else { week = dayAt(week, direction * 7); selectedDay = dayAt(selectedDay, direction * 7); }

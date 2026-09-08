@@ -1,28 +1,63 @@
-TRÉNINGY MFK REVÚCA – vizuálny návrh
+TRÉNINGY MFK REVÚCA – DATABÁZOVÉ REZERVÁCIE
 
-Upravené súbory: index.php, login.php, css/css.css
-Nové súbory: js/calendar.js, nahlad.html, PRECITAJ-MA.txt
+INŠTALÁCIA
 
-Na existujúcom webe nahraj upravené súbory a priečinok js.
-Ostatné pôvodné súbory sú priložené pre úplnosť; konfiguráciu servera netreba prepisovať.
-Náhľad bez PHP: otvor nahlad.html. CSS a js musia zostať vedľa neho v pôvodných priečinkoch.
+1. Pri novej inštalácii importuj iba sql/001_rezervacie.sql do databázy s admins a admins_logs.
+   Ak si už pôvodnú verziu 001 importoval, namiesto nej teraz importuj iba sql/002_typ_udalosti.sql.
+2. Nahraj všetky súbory z balíka. Serverové config/db.c.php a classes/MailsMy/MailsMy.c.php ponechaj so svojimi reálnymi údajmi.
+3. Prihlás sa a otestuj pridanie, úpravu a vymazanie rezervácie.
 
-Kalendár obsahuje vzorové ihriská, trénerov a rezervácie v aktuálnom týždni.
-Funguje prepínanie týždňov, filter ihriska, prepnutie na plochy, pridanie,
-úprava a vymazanie rezervácie. Kliknutím na rezerváciu otvoríš detail.
-Pri vytvorení alebo úprave kontroluje časový konflikt na rovnakej ploche.
-B a A: 4 štvrtiny (1, 2 hore; 3, 4 dole). Polovica sú dve susedné štvrtiny.
-C1: dve polovice nad sebou. U1: zatiaľ celá plocha, členenie sa doplní.
-Grafický výber vo formulári umožňuje označiť štvrtinu, polovicu alebo celé ihrisko.
-Diagonálne dvojice a tri štvrtiny nemožno uložiť. Jedna rezervácia patrí jednému ihrisku.
-Kontrola konfliktov porovnáva všetky vybrané časti, aj pri rezervácii celého ihriska.
-Kalendár sa otvorí od 14:00; ráno je dostupné scrollovaním nahor alebo tlačidlom Od 08:00.
-Údaje sú iba v pamäti otvorenej stránky, po obnovení sa obnovia ukážkové dáta.
-Spoločné ukladanie do databázy a oprávnenia jednotlivých trénerov zatiaľ nie sú zapojené.
+NOVÉ SÚBORY
+
+- api/reservations.php – JSON API pre výpis, uloženie, editáciu a vymazanie.
+- includes/reservations.php – validácia, oprávnenia, databázové transakcie a kontrola kolízií.
+- sql/001_rezervacie.sql – tabuľky reservations, reservation_parts a technický zámok zápisu.
+- sql/002_typ_udalosti.sql – doplnenie typu udalosti do už existujúcej tabuľky reservations.
+- js/calendar-demo.js – pôvodné ukážkové dáta používané iba v nahlad.html.
+
+OPRÁVNENIA
+
+Prihlásený login sa overí cez admins a admins_logs a následne sa hľadá ako kľúč v TRENERI.
+Meno trénera sa vo formulári predvyplní z TRENERI[login][meno]. Tímy sa ponúknu iba z
+TRENERI[login][timy], pričom tím musí existovať aj v TEAMS. Pri jednom tíme je automaticky
+vybraný; pri viacerých zostáva prvá voľba prázdna. Rovnaká kontrola sa vykonáva na serveri
+pri pridaní, editácii aj mazaní, takže ju nemožno obísť úpravou HTML alebo požiadavky.
+
+KOLÍZIE A SÚBEŽNÉ ZÁPISY
+
+Kontrola kolízie sa robí znova tesne pred INSERT/UPDATE v InnoDB transakcii. Krátky spoločný
+databázový zámok serializuje zápisy, preto nemôžu uspieť dve kolidujúce rezervácie odoslané
+naraz ani rezervácia z dlho otvoreného formulára. Pri editácii sa kontroluje aj číslo verzie;
+starý formulár neprepíše novšiu zmenu iného používateľa.
+
+TRÉNINGY, ZÁPASY A PRAVIDLÁ ÁČKA
+
+Typ udalosti sa ukladá do reservations.event_type ako training alebo match. Zápas možno
+zapísať ľubovoľne dopredu a nevzťahujú sa naň limity Áčka. Nový tréning možno zapísať iba
+na najbližší budúci týždeň od pondelka do nedele a až od dňa nastaveného v konštante
+TRENINGY_DEN_OTVORENIA_DALSIEHO_TYZDNA. Hodnota 4 znamená štvrtok (pondelok je 1).
+
+Pravidlá v TEAMS_PODMIENKY platia iba pre tréningy na ihrisku A bez ohľadu na to, či sa
+rezervuje štvrtina, polovica alebo celé ihrisko:
+
+- Acko_viackrat_za_tyzden – bez týždenného limitu.
+- Acko_2x_za_tyzden – najviac dve rezervácie tréningu tímu na Áčku v kalendárnom týždni.
+- Acko_1x_za_tyzden – najviac jedna rezervácia tréningu tímu na Áčku v kalendárnom týždni.
+
+Ak tím nemá žiadne z týchto pravidiel, tréning na Áčku sa neuloží. Kontrola sa robí na
+serveri v rovnakej transakcii ako kontrola obsadenosti. Budúci tréning aktuálneho týždňa
+možno upraviť v rámci toho istého týždňa. Po začiatku nemožno tréning ani zápas upraviť
+alebo vymazať.
+
+DÔLEŽITÉ NEZROVNALOSTI V AKTUÁLNOM CONSTS.PHP
+
+- Kľúč janhodos je v TRENERI dvakrát. PHP prvú položku potichu prepíše. Zápis pre tento login
+  je preto zámerne zablokovaný, kým jeden z trénerov nedostane správny samostatný login.
+- Tréner danielvojcik má tím u11-m-b, ale tento kľúč nie je v TEAMS. Tento tím sa preto
+  nezobrazí a nemožno preň uložiť rezerváciu, kým ho nepridáš do TEAMS alebo neopravíš kľúč.
+
+NÁHĽAD
+
+nahlad.html zostáva samostatná ukážka bez PHP a databázy. Používa js/calendar-demo.js.
+Produkčný index.php používa js/calendar.js a načítava aktuálne údaje z API.
 Responzívna verzia zatiaľ nie je spracovaná.
-
-Prihlasovanie a obnova hesla používajú pôvodnú logiku projektu.
-Repozitár neobsahuje config/db.c.php a classes/MailsMy/MailsMy.c.php,
-ktoré používa config/common.php. Na existujúcom serveri ich ponechaj.
-ZIP je úplná kópia dostupných súborov repozitára s uvedenými úpravami,
-nie samostatná inštalácia databázy alebo chýbajúcich serverových knižníc.

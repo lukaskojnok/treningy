@@ -31,41 +31,47 @@
   const escape = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   let selectedDay = new Date(), week = monday(new Date()), editing = null, mode = 'calendar';
   const events = [];
-  const account = JSON.parse($('reservation-config').textContent);
-  const allowedTeams = Object.keys(account.teams);
-  let editingVersion = null, saving = false, loaded = false, loadSequence = 0;
+  const dailyTrainings = [
+    ['A', 'A1,A2', 'A-mužstvo', 'Ján Horváth'],
+    ['A', 'A3,A4', 'U17', 'Martin Kováč'],
+    ['B', 'B1,B2', 'U15', 'Peter Novák'],
+    ['C', 'C1', 'U13', 'Marek Urban'],
+    ['U', 'U1', 'U11', 'Tomáš Varga']
+  ];
+  // Ukážkové dáta: minulý, aktuálny a budúci týždeň vzhľadom na dnešok.
+  // Časy sú v minútach od polnoci; každá položka vytvorí samostatný tréning.
+  const afternoonStarts = [
+    [840, 900, 960, 1020, 1110],
+    [900, 960, 960, 990, 1080],
+    [960, 960, 960, 960, 960],
+    [870, 930, 1020, 1080, 1140],
+    [900, 990, 1050, 1050, 1140],
+    [840, 900, 930, 1020, 1080],
+    [870, 960, 990, 1080, 1110]
+  ];
+  const focuses = ['kondícia', 'technika', 'prihrávky', 'streľba', 'taktika', 'herná príprava', 'regenerácia'];
+  for (let weekOffset = -1; weekOffset <= 1; weekOffset++) {
+    for (let day = 0; day < 7; day++) {
+      const date = localDate(dayAt(week, weekOffset * 7 + day));
+      const variation = (day + weekOffset + 7) % 7;
+      dailyTrainings.forEach(([field, area, title, coach], index) => {
+        const start = afternoonStarts[variation][index];
+        const duration = variation === 2 ? 90 : [60, 90, 120][(day + index + weekOffset + 7) % 3];
+        events.push({id: events.length + 1, type: 'training', date, start: clock(start), end: clock(start + duration), field, area, title: title + ' · ' + focuses[(variation + index) % 7], coach, note: 'Ukážkový popoludňajší tréning.'});
+      });
+      const morningStart = 480 + (variation % 5) * 30;
+      events.push({id: events.length + 1, type: 'training', date, start: clock(morningStart), end: clock(morningStart + 60), field: 'B', area: 'B3,B4', title: 'U9 · ' + focuses[variation], coach: 'Peter Novák', note: 'Ukážkový dopoludňajší tréning.'});
+      if (day % 2 === 0) {
+        const start = 630 + (variation % 3) * 30;
+        events.push({id: events.length + 1, type: 'match', date, start: clock(start), end: clock(start + 60), field: 'A', area: 'full', title: 'U19 · majstrovský zápas', coach: 'Martin Kováč', note: 'Ukážkový zápas na celom ihrisku.'});
+      }
+    }
+  }
   $('field-date').value = localDate(new Date());
   const typeVisible = e => typeFilter === 'all' || e.type === typeFilter;
   const visible = e => typeVisible(e) && selectedParts(e.field, e.area).some(part => filterSelection[e.field]?.includes(part));
   let calendarScroll = 432;
-  async function api(data, query = '') {
-    const options = {credentials: 'same-origin', cache: 'no-store', headers: {Accept: 'application/json'}};
-    if (data) Object.assign(options, {method: 'POST', headers: {...options.headers, 'Content-Type': 'application/json', 'X-CSRF-Token': account.csrf}, body: JSON.stringify(data)});
-    const response = await fetch('api/reservations.php' + query, options);
-    let result;
-    try { result = await response.json(); } catch (_) { throw new Error('Server nevrátil platnú odpoveď. Skontroluj prihlásenie alebo kontaktuj správcu.'); }
-    if (!response.ok || !result.ok) { const error = new Error(result.message || 'Požiadavka zlyhala.'); error.status = response.status; throw error; }
-    return result;
-  }
-  function calendarStatus(message, retry = false) {
-    $('calendar-status').textContent = [message, ...(account.warnings || [])].filter(Boolean).join(' ');
-    $('calendar-status').hidden = !$('calendar-status').textContent;
-    $('reload-calendar').hidden = !retry;
-  }
-  async function render() {
-    const sequence = ++loadSequence;
-    loaded = false; $('add-event').disabled = true;
-    events.splice(0); renderView(); calendarStatus('Načítavam rezervácie…');
-    const from = localDate(week), to = localDate(dayAt(week, 6));
-    try {
-      const result = await api(null, '?from=' + from + '&to=' + to);
-      if (sequence !== loadSequence) return;
-      events.push(...result.events); loaded = true;
-      $('add-event').disabled = !allowedTeams.length;
-      renderView(); calendarStatus('');
-    } catch (error) { if (sequence === loadSequence) calendarStatus(error.message, true); }
-  }
-  function renderView() {
+  function render() {
     const widths = [];
     const previousScroll = $('calendar-scroller');
     const horizontalScroll = previousScroll ? previousScroll.scrollLeft : 0;
@@ -133,33 +139,15 @@
     }).join('');
   }
   function showForm(data = {}) {
-    if (!loaded || saving) return;
-    const form = $('event-form'); form.reset(); editing = data.id || null; editingVersion = data.version || null;
-    const canEdit = editing ? data.canEdit : allowedTeams.length > 0;
-    form.elements.team.innerHTML = '<option value="">Vyber tím</option>' + Object.entries(account.teams).map(([key, label]) => `<option value="${escape(key)}">${escape(label)}</option>`).join('');
-    if (editing && !account.teams[data.team]) form.elements.team.add(new Option(data.title, data.team));
-    Array.from(form.elements).forEach(el => { if (el.name && el.name !== 'coach') el.disabled = !canEdit; });
-    $('open-booking-map').disabled = !canEdit;
-    $('save-event').hidden = !canEdit;
-    const defaults = {date: '', start: '', end: '', field: '', area: '', team: allowedTeams.length === 1 ? allowedTeams[0] : '', coach: account.coach, ...data};
+    const form = $('event-form'); form.reset(); editing = data.id || null;
+    const defaults = {date: '', start: '', end: '', field: '', area: '', ...data};
     Object.entries(defaults).forEach(([k, v]) => { if (form.elements.namedItem(k)) form.elements.namedItem(k).value = v; });
     $('dialog-title').textContent = editing ? 'Upraviť rezerváciu' : 'Nová rezervácia';
-    $('delete-event').hidden = !editing || !canEdit; $('form-error').textContent = canEdit ? '' : 'Udalosť už začala alebo ju pre tento tím nemôžeš upraviť.'; updateBookingSummary(); updateTypeHelp(); $('event-dialog').showModal();
-  }
-  function formatReservationDate(value) {
-    if (!value) return '';
-    return new Date(value + 'T12:00:00').toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric', year: 'numeric'});
+    $('delete-event').hidden = !editing; $('form-error').textContent = ''; updateBookingSummary(); updateTypeHelp(); $('event-dialog').showModal();
   }
   function updateTypeHelp() {
-    const form = $('event-form'), type = form.elements.type.value, date = form.elements.date;
-    date.removeAttribute('min'); date.removeAttribute('max');
-    if (type === 'training') {
-      if (!editing) { date.min = account.trainingWindow.from; date.max = account.trainingWindow.to; }
-      const team = form.elements.team.value, limit = team ? account.teamLimits[team] : undefined;
-      const limitText = limit === null ? ' Na Áčku nemá tento tím týždenný limit.' : limit > 0 ? ` Na Áčku môže mať najviac ${limit}× za týždeň.` : team ? ' Pre tento tím nie je nastavené pravidlo Áčka.' : '';
-      $('type-help').textContent = (account.trainingWindow.isOpen ? `Tréning možno pridať na budúci týždeň: ${formatReservationDate(account.trainingWindow.from)} – ${formatReservationDate(account.trainingWindow.to)}.` : `Pridávanie tréningov na budúci týždeň sa otvorí od ${account.trainingWindow.openDayLabel}.`) + limitText;
-    } else if (type === 'match') $('type-help').textContent = 'Zápas môžeš zapísať ľubovoľne dopredu a nevzťahuje sa naň týždenný limit Áčka.';
-    else $('type-help').textContent = 'Najprv vyber tréning alebo zápas.';
+    const type = $('event-form').elements.type.value;
+    $('type-help').textContent = type === 'training' ? 'Tréningy sa zapisujú iba na budúci týždeň po otvorení termínov.' : type === 'match' ? 'Zápas možno zapísať ľubovoľne dopredu a nemá limit Áčka.' : 'Najprv vyber tréning alebo zápas.';
   }
   function handleTypeChange(event) {
     if (event.target.value === 'match' && event.target.checked && parts.A) {
@@ -270,45 +258,23 @@
   document.querySelectorAll('[data-type-filter]').forEach(button => button.onclick = () => {
     typeFilter = button.dataset.typeFilter;
     document.querySelectorAll('[data-type-filter]').forEach(item => { const selected = item === button; item.classList.toggle('selected', selected); item.setAttribute('aria-pressed', String(selected)); });
-    renderView();
+    render();
   });
   document.querySelectorAll('input[name="type"]').forEach(input => input.onchange = handleTypeChange);
-  $('event-form').elements.team.onchange = updateTypeHelp;
   ['close-dialog', 'cancel-dialog'].forEach(id => $(id).onclick = () => $('event-dialog').close());
-  function setSaving(value) {
-    saving = value;
-    $('save-event').disabled = value;
-    $('delete-event').disabled = value;
-    $('cancel-dialog').disabled = value;
-    $('close-dialog').disabled = value;
-  }
-  $('event-dialog').addEventListener('cancel', event => { if (saving) event.preventDefault(); });
-  $('delete-event').onclick = async () => {
-    if (saving || !editing || !confirm('Naozaj vymazať túto rezerváciu?')) return;
-    setSaving(true);
-    try {
-      await api({action: 'delete', id: editing, version: editingVersion});
-      $('event-dialog').close(); await render();
-    } catch (error) { $('form-error').textContent = error.message; if (error.status === 409) await render(); }
-    finally { setSaving(false); }
-  };
-  $('event-form').onsubmit = async event => {
+  $('delete-event').onclick = () => { const index = events.findIndex(e => e.id === editing); if (index >= 0) events.splice(index, 1); $('event-dialog').close(); render(); };
+  $('event-form').onsubmit = event => {
     event.preventDefault();
-    if (saving) return;
-    const data = Object.fromEntries(new FormData(event.target));
+    const data = Object.fromEntries(new FormData(event.target)); data.title = data.title.trim(); data.coach = data.coach.trim();
     if (!['training', 'match'].includes(data.type)) { $('form-error').textContent = 'Vyber tréning alebo zápas.'; return; }
-    if (!account.teams[data.team]) { $('form-error').textContent = 'Vyber svoj tím.'; return; }
-    if (!data.date || !data.start || !data.end || data.start >= data.end || data.start < '08:00' || data.end > '22:00') { $('form-error').textContent = 'Vyplň dátum a platný čas od 08:00 do 22:00.'; return; }
-    if (!validArea(data.field, data.area)) { $('form-error').textContent = 'Vyber štvrtinu, polovicu alebo celé ihrisko.'; return; }
-    setSaving(true); $('form-error').textContent = '';
-    try {
-      await api({...data, action: 'save', id: editing || 0, version: editingVersion || 0});
-      selectedDay = new Date(data.date + 'T12:00:00'); week = monday(selectedDay); $('field-date').value = data.date;
-      $('event-dialog').close(); await render();
-    } catch (error) { $('form-error').textContent = error.message; if (error.status === 409) await render(); }
-    finally { setSaving(false); }
+    if (!data.title || !data.coach || data.start >= data.end || data.start < '08:00' || data.end > '22:00') { $('form-error').textContent = 'Vyplň názov a trénera. Koniec musí byť po začiatku, v rozsahu 08:00 – 22:00.'; return; }
+    if (!validArea(data.field, data.area)) { $('form-error').textContent = 'Vyber jednu štvrtinu, dve susedné štvrtiny (polovicu) alebo celé ihrisko.'; return; }
+    if (events.some(e => e.id !== editing && e.date === data.date && e.field === data.field && overlap(e, data) && e.start < data.end && e.end > data.start)) { $('form-error').textContent = 'Táto plocha je v zadanom čase obsadená. Vyber iný čas alebo inú časť ihriska.'; return; }
+    if (editing) Object.assign(events.find(e => e.id === editing), data);
+    else events.push({...data, id: Math.max(0, ...events.map(e => e.id)) + 1});
+    selectedDay = new Date(data.date + 'T12:00:00'); week = monday(selectedDay); $('field-date').value = data.date;
+    $('event-dialog').close(); render();
   };
-  $('reload-calendar').onclick = () => render();
   $('field-legend').innerHTML = Object.entries(fields).map(([id, name]) => `<span><i class="${colors[id]}"></i>${escape(name)}</span>`).join('');
   render();
 })();

@@ -224,13 +224,22 @@ h1 {
   background: #edf3ef;
 }
 .toolbar {
-  display: flex; align-items: center; gap: 26px; min-height: 76px;
+  display: flex; align-items: center; gap: 12px; min-height: 76px;
 }
-.switch, .date-nav {
+.switch, .type-filter, .date-nav {
   display: flex; align-items: center;
 }
-.switch .button + .button {
+.switch .button + .button, .type-filter .button + .button {
   border-left: 0;
+}
+.type-filter .button {
+  padding: 9px 11px;
+}
+.type-filter .match-filter {
+  color: #8a2435;
+}
+.type-filter .match-filter.selected {
+  border-color: #b4233d; color: #fff; background: #b4233d;
 }
 .date-nav {
   gap: 5px;
@@ -322,6 +331,9 @@ select, input, textarea {
 .event.artificial {
   border-color: #ead9b7; border-left-color: #b98427; color: #825e20; background: #fbf2df;
 }
+.event.event-match {
+  border-color: #efb8c2; border-left-color: #b4233d; color: #7d1c2e; background: #fde8ec;
+}
 .event:hover {
   filter: brightness(.96);
 }
@@ -385,6 +397,12 @@ select, input, textarea {
 .pitch-half.busy {
   border: 1px solid #e7ce88; color: #fff8e4; background: #79551bd9;
 }
+.pitch-half.busy.event-match {
+  border-color: #ffb7c4; color: #fff; background: #9c263bd9;
+}
+.pitch-booking.event-match {
+  padding-left: 9px; border-left: 3px solid #b4233d; color: #7d1c2e; background: #fff5f6;
+}
 .pitch-half:hover {
   outline: 2px solid #fff;
 }
@@ -411,6 +429,36 @@ dialog::backdrop {
 }
 .dialog-note {
   margin: 16px 0; font-size: 12px; color: var(--muted);
+}
+.event-type-picker {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 8px; padding: 0; border: 0;
+}
+.event-type-picker legend {
+  grid-column: 1 / -1; margin-bottom: 6px; font-size: 12px; font-weight: 700;
+}
+#event-form .event-type-picker label {
+  display: block; margin: 0; cursor: pointer;
+}
+.event-type-picker input {
+  position: absolute; opacity: 0; pointer-events: none;
+}
+.event-type-picker span {
+  display: flex; flex-direction: column; min-height: 64px; padding: 12px 14px; border: 2px solid var(--border); font-size: 15px; font-weight: 800; background: #fff;
+}
+.event-type-picker small {
+  margin-top: 4px; font-size: 11px; font-weight: 500; color: var(--muted);
+}
+.event-type-picker input:focus-visible + span {
+  outline: 2px solid #16815d; outline-offset: 2px;
+}
+.event-type-picker input:checked + span {
+  border-color: var(--primary); color: var(--primary); background: #edf6f0;
+}
+.event-type-picker input[value="match"]:checked + span {
+  border-color: #b4233d; color: #8a2435; background: #fde8ec;
+}
+.type-help {
+  min-height: 18px; margin: 0 0 10px; font-size: 11px; color: var(--muted);
 }
 #event-form label {
   display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; font-size: 12px; font-weight: 600;
@@ -449,7 +497,7 @@ dialog::backdrop {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .pitch {
-  display: grid; gap: 0;
+  display: grid; gap: 0; height: 230px;
 }
 .parts-4 {
   grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, 1fr);
@@ -557,7 +605,7 @@ dialog {
   grid-template-columns: 1fr 1fr .8fr .8fr;
 }
 #pitch-picker .map-pitch {
-  height: 240px;
+  height: 190px;
 }
 .map-part span {
   font-size: 11px;

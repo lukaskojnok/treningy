@@ -2,6 +2,11 @@
 session_start();
 header("Cache-Control: no-cache, no-store, must-revalidate");
 
+$token_login_request = isset($_GET["token"]);
+if ($token_login_request) {
+  unset($_COOKIE["loginADMIN"], $_COOKIE["loginADMIN_unique_code"]);
+}
+
 require_once("config/common.php");
 
 // echo hash('sha512', "cyrilsiman"."".HASH);
@@ -14,6 +19,38 @@ $h = "";
 $e = "";
 $i = "";
 
+function login_admin(array $admin, PDO $db): void {
+  $login = (string) $admin["login"];
+  setcookie("loginADMIN", $login, time() + 60 * 60 * 24, "/");
+
+  $remote_address = (string) ($_SERVER["REMOTE_ADDR"] ?? "");
+  $user_agent = (string) ($_SERVER["HTTP_USER_AGENT"] ?? "");
+  $unique_code = unique_code_admin_login($login, $remote_address, $user_agent, session_id());
+  setcookie("loginADMIN_unique_code", $unique_code, time() + 60 * 60 * 24, "/");
+
+  $db->prepare("UPDATE admins SET date_login_last=NOW() WHERE login=:login")->execute(["login" => $login]);
+  $db->prepare("DELETE FROM admins_logs WHERE unique_code=:unique_code")->execute(["unique_code" => $unique_code]);
+
+  $query = $db->prepare("INSERT INTO admins_logs SET login=:login, session_id=:session_id, user_agent=:user_agent, ip=:ip, unique_code=:unique_code, date_login=NOW(), date_last_do=NOW()");
+  $query->execute([
+    "login" => $login,
+    "session_id" => session_id(),
+    "user_agent" => $user_agent,
+    "ip" => $remote_address,
+    "unique_code" => $unique_code
+  ]);
+
+  $location = (string) ($_SESSION["lastpage"] ?? "/index.php");
+  if ($location === "" || preg_match("~^(?:https?:)?//~i", $location)) {
+    $location = "/index.php";
+  } elseif ($location[0] !== "/") {
+    $location = "/" . ltrim($location, "/");
+  }
+
+  header("Location: " . $location);
+  exit;
+}
+
 $query = $db->prepare("SELECT id FROM admins WHERE password_forgotten_to < NOW() AND password_forgotten_to != '0000-00-00 00:00:00'");
 $query->execute();
 $expired_password_requests = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -22,6 +59,24 @@ foreach ($expired_password_requests as $expired_password_request) {
   $db->prepare("UPDATE admins SET password_forgotten_hash='', password_forgotten_to='0000-00-00 00:00:00' WHERE id=:id")->execute([
     "id" => $expired_password_request["id"]
   ]);
+}
+
+if (isset($_GET["token"])) {
+  $token = trim((string) $_GET["token"]);
+  $token_is_valid = $token !== "" && strlen($token) <= 255 && preg_match("~^[A-Za-z0-9_-]+$~", $token);
+  $token_admins = [];
+
+  if ($token_is_valid) {
+    $query = $db->prepare("SELECT * FROM admins WHERE token_login=:token_login AND token_login!='' AND active='1' LIMIT 2");
+    $query->execute(["token_login" => $token]);
+    $token_admins = $query->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  if (count($token_admins) === 1) {
+    login_admin($token_admins[0], $db);
+  }
+
+  $result_log = '<div class="alert alert-danger" role="alert">Prihlasovací odkaz nie je platný.</div>';
 }
 
 if (($_POST["form"] ?? "") === "1") {
@@ -40,32 +95,7 @@ if (($_POST["form"] ?? "") === "1") {
   $login_is_valid = $login !== "" && $password !== "" && isset($admin["login"], $admin["password"]) && hash_equals((string) $admin["password"], $password_hash);
 
   if ($login_is_valid) {
-    setcookie("loginADMIN", $login, time() + 60 * 60 * 24, "/");
-
-    $remote_address = (string) ($_SERVER["REMOTE_ADDR"] ?? "");
-    $user_agent = (string) ($_SERVER["HTTP_USER_AGENT"] ?? "");
-    $unique_code = unique_code_admin_login($admin["login"], $remote_address, $user_agent, session_id());
-    setcookie("loginADMIN_unique_code", $unique_code, time() + 60 * 60 * 24, "/");
-
-    $db->prepare("UPDATE admins SET date_login_last=NOW() WHERE login=:login")->execute(["login" => $login]);
-    $db->prepare("DELETE FROM admins_logs WHERE unique_code=:unique_code")->execute(["unique_code" => $unique_code]);
-
-    $query = $db->prepare("INSERT INTO admins_logs SET login=:login, session_id=:session_id, user_agent=:user_agent, ip=:ip, unique_code=:unique_code, date_login=NOW(), date_last_do=NOW()");
-    $query->execute([
-      "login" => $login,
-      "session_id" => session_id(),
-      "user_agent" => $user_agent,
-      "ip" => $remote_address,
-      "unique_code" => $unique_code
-    ]);
-
-    $location = (string) ($_SESSION["lastpage"] ?? "index.php");
-    if ($location === "" || preg_match("~^(?:https?:)?//~i", $location)) {
-      $location = "index.php";
-    }
-
-    header("Location: " . $location);
-    exit;
+    login_admin($admin, $db);
   }
 
   $result_log = '<div class="alert alert-danger" role="alert">Zadali ste nesprávne prihlasovacie meno alebo heslo.</div>';
@@ -164,8 +194,8 @@ if (($_GET["pok"] ?? "") === "1") {
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0b5d3b">
   <title>Prihlásenie | Tréningy MFK Revúca</title>
-  <link rel="stylesheet" href="css/css.css?v=2">
-  <link rel="stylesheet" href="css/responsive.css?v=20260908-1">
+  <link rel="stylesheet" href="/css/css.css?v=2">
+  <link rel="stylesheet" href="/css/responsive.css?v=20260908-1">
 </head>
 <body class="auth-body">
   <div class="wrapper">

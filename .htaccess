@@ -18,6 +18,9 @@ RewriteRule ^ - [L]
 # Administrácia
 RewriteRule ^admin/?$ admin/index.php [L,QSA]
 
+# Prihlásenie cez osobný token
+RewriteRule ^t/([A-Za-z0-9_-]+)/?$ login.php?token=$1 [L,QSA]
+
 # Titulka
 RewriteRule ^$ index.php [L,QSA]
 

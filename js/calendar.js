@@ -85,7 +85,7 @@
     ['calendar-tip', 'morning', 'afternoon'].forEach(id => $(id).hidden = mode === 'fields');
     $('prev').setAttribute('aria-label', dailyNavigation ? 'Predchádzajúci deň' : 'Predchádzajúci týždeň');
     $('next').setAttribute('aria-label', dailyNavigation ? 'Nasledujúci deň' : 'Nasledujúci týždeň');
-    $('calendar-view').setAttribute('aria-label', isDay ? 'Denný kalendár častí ihrísk' : 'Týždenný kalendár');
+    $('calendar-view').setAttribute('aria-label', isDay ? 'Kalendár s ihriskami' : 'Týždenný kalendár');
     $('date-heading').textContent = dailyNavigation ? selectedDay.toLocaleDateString('sk-SK', {weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric'}) : `${week.toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric'})} – ${dayAt(week, 6).toLocaleDateString('sk-SK', {day: 'numeric', month: 'numeric', year: 'numeric'})}`;
     let heads = '<div class="time-heading">ČAS</div>', columns = '<div class="time-axis">';
     for (let h = 8; h < 22; h++) columns += `<span style="top:${(h - 8) * 72 + 3}px">${clock(h * 60)}</span>`;
